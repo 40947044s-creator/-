@@ -2,65 +2,85 @@
 <html>
 <head>
     <style>
-        body { font-family: 'Courier New', Courier, monospace; background: #111; color: #0f0; }
-        .ticker-wrap {
-            width: 100%; overflow: hidden; background: #222; 
-            padding: 20px 0; border-top: 2px solid #0f0; border-bottom: 2px solid #0f0;
+        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; overflow: hidden; }
+        .container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        
+        /* The "Flush" Animation */
+        .digit-stream {
+            font-size: 5rem;
+            font-weight: bold;
+            text-shadow: 0 0 20px #0f0;
+            display: flex;
+            gap: 20px;
         }
-        .ticker {
-            display: inline-block; white-space: nowrap;
-            animation: marquee 30s linear infinite;
+
+        .box {
+            border: 2px solid #0f0;
+            padding: 20px;
+            width: 80px;
+            text-align: center;
+            transition: all 0.1s ease-in-out;
         }
-        .ticker:hover { animation-play-state: paused; cursor: help; }
-        .digit { font-size: 2rem; padding: 0 5px; position: relative; }
-        .digit:hover::after {
-            content: attr(data-source);
-            position: absolute; top: -30px; left: 0;
-            background: #fff; color: #000; font-size: 0.8rem;
-            padding: 2px 5px; border-radius: 3px; white-space: nowrap;
-        }
-        @keyframes marquee {
-            0% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
-        }
-        .sources { margin-top: 20px; color: #888; font-size: 0.9rem; text-align: center; }
-        a { color: #0f0; }
+
+        .label { color: #888; font-size: 1rem; margin-bottom: 10px; }
+        
+        /* Flash effect when a digit "snaps" */
+        .snap { color: #fff; text-shadow: 0 0 30px #fff; transform: scale(1.1); }
     </style>
 </head>
 <body>
 
-<h2 style="text-align:center;">Three Generation Inference Ticker</h2>
+<div class="container">
+    <div style="margin-bottom: 50px; text-align: center;">
+        <h1>3-Gen Inference Engine</h1>
+        <p>Calculating $e^{\pi^e} \rightarrow 0$ Balance</p>
+    </div>
 
-<div class="ticker-wrap">
-    <div class="ticker" id="ticker-content">
+    <div class="digit-stream">
+        <div>
+            <div class="label">PI GEN</div>
+            <div id="pi-box" class="box">0</div>
         </div>
-</div>
-
-<div class="sources">
-    Sources for Verification: 
-    <a href="https://www.piday.org/pi-calculator/" target="_blank">Pi (NASA/PiDay)</a> | 
-    <a href="https://apod.nasa.gov/htmltest/gifcity/e.2million" target="_blank">Euler's Number (NASA)</a>
+        <div>
+            <div class="label">E GEN</div>
+            <div id="e-box" class="box">0</div>
+        </div>
+    </div>
+    
+    <div style="margin-top: 50px;">
+        <button onclick="startInference()" style="padding: 10px 20px; cursor: pointer;">START FLUSH</button>
+    </div>
 </div>
 
 <script>
-    const pi = "3141592653";
-    const e = "2718281828";
-    const content = document.getElementById('ticker-content');
-    
-    // Create the alternating sequence
-    for(let i=0; i < pi.length; i++) {
-        const spanPi = document.createElement('span');
-        spanPi.className = 'digit';
-        spanPi.innerText = pi[i];
-        spanPi.setAttribute('data-source', `Pi Digit ${i+1}`);
-        
-        const spanE = document.createElement('span');
-        spanE.className = 'digit';
-        spanE.innerText = e[i];
-        spanE.setAttribute('data-source', `E Digit ${i+1}`);
-        
-        content.appendChild(spanPi);
-        content.appendChild(spanE);
+    const piDigits = "3141592653589793";
+    const eDigits = "2718281828459045";
+    let index = 0;
+
+    function startInference() {
+        const piBox = document.getElementById('pi-box');
+        const eBox = document.getElementById('e-box');
+
+        const interval = setInterval(() => {
+            // Random "noise" to simulate high-speed calculation
+            piBox.innerText = Math.floor(Math.random() * 10);
+            eBox.innerText = Math.floor(Math.random() * 10);
+            piBox.classList.remove('snap');
+            eBox.classList.remove('snap');
+
+            // Every 5th tick, "Snap" the real digits out
+            if (index < piDigits.length) {
+                setTimeout(() => {
+                    piBox.innerText = piDigits[index];
+                    eBox.innerText = eDigits[index];
+                    piBox.classList.add('snap');
+                    eBox.classList.add('snap');
+                    index++;
+                }, 50); 
+            } else {
+                clearInterval(interval);
+            }
+        }, 150); // Speed of the flush
     }
 </script>
 </body>
