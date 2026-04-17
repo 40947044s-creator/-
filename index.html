@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>9Q Inference Stream | Project NP</title>
+    <title>9Q Truth Test | Euler-Pi Inference</title>
     <style>
         body {
             background: #000;
@@ -16,93 +16,104 @@
             overflow: hidden;
         }
 
-        /* The Headline Track */
-        .ticker-track {
+        /* The Truth Test Tracks */
+        .track {
             width: 100%;
-            overflow: hidden;
-            background: rgba(0, 20, 0, 0.5);
-            border-top: 1px solid #111;
-            border-bottom: 1px solid #111;
-            padding: 15px 0;
+            background: rgba(10, 10, 10, 0.9);
+            border-top: 1px solid #1a1a1a;
+            border-bottom: 1px solid #1a1a1a;
+            padding: 30px 0;
             position: relative;
         }
 
-        .headline {
+        .headline-stream {
             display: flex;
             white-space: nowrap;
-            font-size: 6rem;
+            font-size: 8rem; /* Large for clear truth testing */
             font-weight: 900;
-            letter-spacing: 20px;
-            /* Default Speed */
-            animation: scroll 30s linear infinite;
+            letter-spacing: 25px;
+            animation: flush 40s linear infinite;
+            will-change: transform;
         }
 
-        /* E-Precedence (Green) */
-        #e-headline {
-            color: #00ff41;
-            text-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
-        }
+        /* Euler Precedence (Growth) */
+        #e-truth { color: #00ff41; text-shadow: 0 0 20px #00ff41; }
+        
+        /* Pi Remainder (Rotation) */
+        #pi-truth { color: #0088ff; text-shadow: 0 0 20px #0088ff; }
 
-        /* Pi-Rotation (Blue/Cyan) */
-        #pi-headline {
-            color: #00d4ff;
-            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
-        }
-
-        @keyframes scroll {
+        @keyframes flush {
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
         }
 
         .label {
-            font-size: 0.9rem;
-            color: #333;
-            padding-left: 10px;
-            letter-spacing: 4px;
-            margin-bottom: 5px;
+            font-size: 0.7rem;
+            color: #444;
+            padding: 10px 20px;
+            letter-spacing: 5px;
+            text-transform: uppercase;
         }
 
-        .controls {
-            position: absolute;
-            bottom: 40px;
-            width: 100%;
-            text-align: center;
+        .accel-overlay {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 100;
         }
 
         button {
-            background: transparent;
+            background: #000;
             color: #00ff41;
-            border: 2px solid #00ff41;
-            padding: 10px 40px;
-            font-family: inherit;
+            border: 1px solid #00ff41;
+            padding: 15px 30px;
             cursor: pointer;
             font-weight: bold;
-            transition: 0.3s;
+            letter-spacing: 2px;
         }
 
-        button:hover {
-            background: #00ff41;
-            color: #000;
-            box-shadow: 0 0 20px #00ff41;
-        }
-
-        .accel-mode {
-            border-color: #ff0000;
-            color: #ff0000;
-        }
+        button:hover { background: #00ff41; color: #000; }
     </style>
 </head>
 <body>
 
-    <div class="label">GEN-0_E_GROWTH_PRECEDENCE</div>
-    <div class="ticker-track">
-        <div class="headline" id="e-headline"></div>
+    <div class="label">PRECEDENCE_EULER_2.718...</div>
+    <div class="track">
+        <div class="headline-stream" id="e-truth"></div>
     </div>
 
-    <div class="label" style="margin-top: 50px;">GEN-0_PI_ROTATION_REMAINDER</div>
-    <div class="ticker-track">
-        <div class="headline" id="pi-headline"></div>
+    <div class="label" style="margin-top: 40px;">INFERENCE_PI_3.141...</div>
+    <div class="track">
+        <div class="headline-stream" id="pi-truth"></div>
     </div>
+
+    <div class="accel-overlay">
+        <button onclick="accelerate()">TOGGLE 9Q SPEED</button>
+    </div>
+
+    <script>
+        // High-precision strings to fuel the truth test
+        const eData  = "271828182845904523536028747135266249775724709369995";
+        const piData = "314159265358979323846264338327950288419716939937510";
+
+        const eEl = document.getElementById('e-truth');
+        const piEl = document.getElementById('pi-truth');
+
+        // Infinite Mirroring
+        eEl.innerText = eData + eData + eData;
+        piEl.innerText = piData + piData + piData;
+
+        let fast = false;
+        function accelerate() {
+            fast = !fast;
+            const streams = document.querySelectorAll('.headline-stream');
+            streams.forEach(s => {
+                s.style.animationDuration = fast ? '2s' : '40s';
+            });
+        }
+    </script>
+</body>
+</html>
 
     <div class="controls">
         <button id="accel-btn" onclick="toggleAcceleration()">ACCELERATE 9Q_FLUSH</button>
