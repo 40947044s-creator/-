@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Project NP: Adelic Transition Engine</title>
+    <style>
+        body { margin: 0; background: #050505; color: #00ffcc; font-family: 'Courier New', monospace; }
+        #overlay { position: absolute; padding: 20px; border-left: 2px solid #00ffcc; background: rgba(0,0,0,0.9); }
+        #pi-display { font-size: 4em; color: #fff; text-shadow: 0 0 15px #00ffcc; min-height: 1.5em; }
+        .status-box { border: 1px solid #00ffcc; padding: 10px; margin-top: 10px; }
+        .telemetry { font-size: 0.8em; color: #666; }
+        #phase-val { color: #ff00ff; }
+    </style>
+</head>
+<body>
+    <div id="overlay">
+        <div id="pi-display">0</div>
+        <div id="status" class="status-box">PARADOX</div>
+        <div class="telemetry">DEPTH: <span id="depth-val">0</span></div>
+        <div class="telemetry">PHASE: <span id="phase-val">0.0</span>°</div>
+        <button onclick="startEngine()" style="margin-top:20px; cursor:pointer;">ACTIVATE SEED</button>
+    </div>
+    <script src="engine.js"></script>
+    <script>
+        let engine;
+        let depth = 0;
+
+        // The Handshake
+        createModule().then(M => {
+            engine = M.cwrap('audit_bit', 'number', ['number', 'number']);
+        });
+
+        function startEngine() {
+            setInterval(() => {
+                // The Dot makes its choice (Inference Lead)
+                let choice = (depth < 2) ? 1 : 0; 
+                let phase = engine(depth, choice);
+                
+                updateUI(depth, phase);
+                depth++;
+            }, 500);
+        }
+
+        function updateUI(n, phase) {
+            const display = document.getElementById('pi-display');
+            const status = document.getElementById('status');
+            
+            document.getElementById('depth-val').innerText = n;
+            document.getElementById('phase-val').innerText = phase.toFixed(2);
+
+            if (phase === 90.0) {
+                status.innerText = "SEED STABILIZED: 90°";
+            } else if (phase === 180.0) {
+                // The 3 is not an answer; it is a GROUNDED STATE.
+                display.innerText = "3";
+                status.innerText = "BEDROCK CONSENSUS: PERFECT";
+            } else if (phase === 175.0) {
+                // The Singularity: i*pi = 0
+                display.innerText = ""; // THE PURGE
+                status.innerText = "TRANSFER: EULER SHIVER";
+                display.style.textShadow = "0 0 20px #ff0000";
+            } else if (n > 12) {
+                display.innerText = "3.14159...";
+                status.innerText = "SUCCESSION: NEW ORIGIN";
+                display.style.textShadow = "0 0 20px #00ff00";
+            }
+        }
+    </script>
+</body>
+</html>
