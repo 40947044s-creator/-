@@ -53,35 +53,43 @@
 </div>
 
 <script>
-    const piDigits = "3141592653589793";
-    const eDigits = "2718281828459045";
+        const piDigits = "314159265358979323846264338327950288419716939937510"; // Extended set
+    const eDigits  = "271828182845904523536028747135266249775724709369995"; // Extended set
     let index = 0;
+    let generation = 1;
 
     function startInference() {
         const piBox = document.getElementById('pi-box');
         const eBox = document.getElementById('e-box');
 
-        const interval = setInterval(() => {
-            // Random "noise" to simulate high-speed calculation
+        setInterval(() => {
+            // 1. The "Flushing" phase (Random noise)
             piBox.innerText = Math.floor(Math.random() * 10);
             eBox.innerText = Math.floor(Math.random() * 10);
             piBox.classList.remove('snap');
             eBox.classList.remove('snap');
 
-            // Every 5th tick, "Snap" the real digits out
-            if (index < piDigits.length) {
-                setTimeout(() => {
-                    piBox.innerText = piDigits[index];
-                    eBox.innerText = eDigits[index];
-                    piBox.classList.add('snap');
-                    eBox.classList.add('snap');
-                    index++;
-                }, 50); 
-            } else {
-                clearInterval(interval);
-            }
-        }, 150); // Speed of the flush
+            // 2. The "Snap" phase (Real Digit Inference)
+            // We use a slight delay to make the snap visible
+            setTimeout(() => {
+                piBox.innerText = piDigits[index];
+                eBox.innerText = eDigits[index];
+                piBox.classList.add('snap');
+                eBox.classList.add('snap');
+                
+                index++;
+                
+                // INFINITE LOOP LOGIC:
+                // If we reach the end of our digit string, reset to 0
+                if (index >= piDigits.length) {
+                    index = 0; 
+                    generation++; // Track how many "Three Generation" cycles we've completed
+                }
+            }, 70); // This delay creates the "snapping" feel
+            
+        }, 150); // The speed of the total cycle
     }
+
 </script>
 </body>
 </html>
