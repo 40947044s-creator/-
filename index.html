@@ -1,95 +1,153 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>9Q Inference Drill | Project NP</title>
     <style>
-        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; overflow: hidden; }
-        .container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-        
-        /* The "Flush" Animation */
-        .digit-stream {
-            font-size: 5rem;
-            font-weight: bold;
-            text-shadow: 0 0 20px #0f0;
+        :root {
+            --neon-green: #00ff41;
+            --dark-bg: #000000;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: var(--neon-green);
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
             display: flex;
-            gap: 20px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        .box {
-            border: 2px solid #0f0;
-            padding: 20px;
-            width: 80px;
+        .header {
             text-align: center;
-            transition: all 0.1s ease-in-out;
+            margin-bottom: 20px;
         }
 
-        .label { color: #888; font-size: 1rem; margin-bottom: 10px; }
-        
-        /* Flash effect when a digit "snaps" */
-        .snap { color: #fff; text-shadow: 0 0 30px #fff; transform: scale(1.1); }
+        /* The "Pao Ma Deng" / Headline Drill Box */
+        #display {
+            font-size: 12rem;
+            font-weight: 900;
+            border: 10px double var(--neon-green);
+            width: 300px;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.02s ease-in-out;
+            box-shadow: 0 0 50px rgba(0, 255, 65, 0.3);
+        }
+
+        /* The "Snap" flash effect */
+        .snap {
+            color: #ffffff;
+            text-shadow: 0 0 40px var(--neon-green), 0 0 80px #fff;
+        }
+
+        .description {
+            max-width: 700px;
+            margin-top: 40px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.6;
+            border-top: 1px solid #333;
+            padding-top: 20px;
+        }
+
+        button {
+            background: transparent;
+            color: var(--neon-green);
+            border: 3px solid var(--neon-green);
+            padding: 20px 50px;
+            font-size: 1.5rem;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 30px;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+        }
+
+        button:hover {
+            background: var(--neon-green);
+            color: #000;
+            box-shadow: 0 0 30px var(--neon-green);
+        }
+
+        .status-bar {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #444;
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div style="margin-bottom: 50px; text-align: center;">
-        <h1>3-Gen Inference Engine</h1>
-        <p>Calculating $e^{\pi^e} \rightarrow 0$ Balance</p>
+    <div class="header">
+        <h1 style="margin:0;">INFERENCE DRILL</h1>
+        <p style="color: #444;">3-GEN STAIRCASE: &pi;(3.14) & e(2.71)</p>
     </div>
 
-    <div class="digit-stream">
-        <div>
-            <div class="label">PI GEN</div>
-            <div id="pi-box" class="box">0</div>
-        </div>
-        <div>
-            <div class="label">E GEN</div>
-            <div id="e-box" class="box">0</div>
-        </div>
+    <div id="display">0</div>
+
+    <button id="drill-btn" onclick="startDrill()">Start 9Q Flush</button>
+
+    <div class="description">
+        <strong>Procedure:</strong> Alternating digits from 3.14 and 2.71 seeds. <br>
+        Each digit is <em>flushed</em> at speed-of-light simulation (60ms cycles). <br>
+        The engine performs a 2-adic bit-peel to infer the next residue without long-term storage.
     </div>
-    
-    <div style="margin-top: 50px;">
-        <button onclick="startInference()" style="padding: 10px 20px; cursor: pointer;">START FLUSH</button>
-    </div>
-</div>
 
-<script>
-        const piDigits = "314159265358979323846264338327950288419716939937510"; // Extended set
-    const eDigits  = "271828182845904523536028747135266249775724709369995"; // Extended set
-    let index = 0;
-    let generation = 1;
+    <div class="status-bar" id="status">STATUS: IDLE_STANDBY</div>
 
-    function startInference() {
-        const piBox = document.getElementById('pi-box');
-        const eBox = document.getElementById('e-box');
+    <script>
+        // High-precision seeds for the 3-Gen logic
+        const piStr = "31415926535897932384626433832795";
+        const eStr  = "27182818284590452353602874713526"; 
+        let index = 0;
+        let running = false;
 
-        setInterval(() => {
-            // 1. The "Flushing" phase (Random noise)
-            piBox.innerText = Math.floor(Math.random() * 10);
-            eBox.innerText = Math.floor(Math.random() * 10);
-            piBox.classList.remove('snap');
-            eBox.classList.remove('snap');
+        function startDrill() {
+            if (running) return;
+            running = true;
 
-            // 2. The "Snap" phase (Real Digit Inference)
-            // We use a slight delay to make the snap visible
-            setTimeout(() => {
-                piBox.innerText = piDigits[index];
-                eBox.innerText = eDigits[index];
-                piBox.classList.add('snap');
-                eBox.classList.add('snap');
-                
-                index++;
-                
-                // INFINITE LOOP LOGIC:
-                // If we reach the end of our digit string, reset to 0
-                if (index >= piDigits.length) {
-                    index = 0; 
-                    generation++; // Track how many "Three Generation" cycles we've completed
-                }
-            }, 70); // This delay creates the "snapping" feel
-            
-        }, 150); // The speed of the total cycle
-    }
+            const box = document.getElementById('display');
+            const btn = document.getElementById('drill-btn');
+            const status = document.getElementById('status');
 
-</script>
+            btn.style.display = 'none';
+            status.innerText = "STATUS: ACTIVE_DRILLING_9Q_STREAM";
+
+            // Main Execution Loop: 60ms total cycle
+            setInterval(() => {
+                // STEP 1: Flush (The 2-adic peel / clear previous state)
+                box.style.opacity = "0";
+                box.classList.remove('snap');
+
+                // STEP 2: Inference (Alternating step between Pi and e)
+                setTimeout(() => {
+                    // Logic: Even indices = Pi, Odd indices = e
+                    if (index % 2 === 0) {
+                        box.innerText = piStr[Math.floor(index / 2) % piStr.length];
+                    } else {
+                        box.innerText = eStr[Math.floor(index / 2) % eStr.length];
+                    }
+                    
+                    // STEP 3: Snap (Speed of light output/flash)
+                    box.style.opacity = "1";
+                    box.classList.add('snap');
+                    
+                    index++;
+                }, 25); // 25ms delay creates the 'snap' feel
+
+            }, 60); // 60ms cycle simulates high-speed hardware processing
+        }
+    </script>
+
 </body>
 </html>
