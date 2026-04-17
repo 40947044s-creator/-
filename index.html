@@ -2,192 +2,147 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>9Q Inference Drill | Project NP</title>
+    <title>9Q Inference Stream | Project NP</title>
     <style>
         body {
             background: #000;
             color: #00ff41;
             font-family: 'Courier New', monospace;
+            margin: 0;
             display: flex;
             flex-direction: column;
-            align-items: center;
             justify-content: center;
             height: 100vh;
-            margin: 0;
             overflow: hidden;
         }
 
-        .stream-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            width: 90%;
-        }
-
-        .stream-label {
-            font-size: 1rem;
-            color: #555;
-            letter-spacing: 3px;
-            margin-bottom: 5px;
-        }
-
-        /* The rolling number window */
-        .rolling-stream {
-            font-size: 4rem;
-            font-weight: bold;
-            white-space: nowrap;
-            border: 2px solid #222;
-            padding: 10px;
+        /* The Headline Track */
+        .ticker-track {
+            width: 100%;
             overflow: hidden;
-            background: rgba(0, 255, 65, 0.02);
+            background: rgba(0, 20, 0, 0.5);
+            border-top: 1px solid #111;
+            border-bottom: 1px solid #111;
+            padding: 15px 0;
             position: relative;
         }
 
-        #e-stream { border-left: 5px solid #00ff41; } /* Euler Precedence */
-        #pi-stream { border-left: 5px solid #0088ff; color: #0088ff; }
+        .headline {
+            display: flex;
+            white-space: nowrap;
+            font-size: 6rem;
+            font-weight: 900;
+            letter-spacing: 20px;
+            /* Default Speed */
+            animation: scroll 30s linear infinite;
+        }
+
+        /* E-Precedence (Green) */
+        #e-headline {
+            color: #00ff41;
+            text-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+        }
+
+        /* Pi-Rotation (Blue/Cyan) */
+        #pi-headline {
+            color: #00d4ff;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+
+        @keyframes scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .label {
+            font-size: 0.9rem;
+            color: #333;
+            padding-left: 10px;
+            letter-spacing: 4px;
+            margin-bottom: 5px;
+        }
 
         .controls {
-            margin-top: 50px;
-            display: flex;
-            gap: 20px;
+            position: absolute;
+            bottom: 40px;
+            width: 100%;
+            text-align: center;
         }
 
         button {
-            background: none;
-            border: 2px solid #00ff41;
+            background: transparent;
             color: #00ff41;
-            padding: 15px 30px;
+            border: 2px solid #00ff41;
+            padding: 10px 40px;
+            font-family: inherit;
             cursor: pointer;
             font-weight: bold;
-            text-transform: uppercase;
+            transition: 0.3s;
         }
 
-        button:hover { background: #00ff41; color: #000; }
-        .accel-active { background: #ff0000 !important; color: #fff !important; border-color: #ff0000 !important; box-shadow: 0 0 20px #ff0000; }
+        button:hover {
+            background: #00ff41;
+            color: #000;
+            box-shadow: 0 0 20px #00ff41;
+        }
+
+        .accel-mode {
+            border-color: #ff0000;
+            color: #ff0000;
+        }
     </style>
 </head>
 <body>
 
-    <div class="stream-container">
-        <div>
-            <div class="stream-label">EULER PRECEDENCE (GROWTH)</div>
-            <div id="e-stream" class="rolling-stream">--------------------</div>
-        </div>
-        <div>
-            <div class="stream-label">PI ROTATION (CYCLE)</div>
-            <div id="pi-stream" class="rolling-stream">--------------------</div>
-        </div>
+    <div class="label">GEN-0_E_GROWTH_PRECEDENCE</div>
+    <div class="ticker-track">
+        <div class="headline" id="e-headline"></div>
+    </div>
+
+    <div class="label" style="margin-top: 50px;">GEN-0_PI_ROTATION_REMAINDER</div>
+    <div class="ticker-track">
+        <div class="headline" id="pi-headline"></div>
     </div>
 
     <div class="controls">
-        <button onclick="toggleDrill()" id="start-btn">Initiate 9Q Flush</button>
-        <button onclick="accelerate()" id="accel-btn">Accelerate (Speed of Light)</button>
+        <button id="accel-btn" onclick="toggleAcceleration()">ACCELERATE 9Q_FLUSH</button>
     </div>
 
     <script>
-        const piStr = "314159265358979323846264338327950288419716939937510";
-        const eStr  = "271828182845904523536028747135266249775724709369995";
-        
-        let eIndex = 0;
-        let piIndex = 0;
-        let speed = 150; 
-        let interval;
+        // Utilizing the 3.14 and 2.71 Seeds
+        const eBase  = "27182818284590452353602874713526624977572470936999";
+        const piBase = "31415926535897932384626433832795028841971693993751";
 
-        function updateStreams() {
-            const eDisplay = document.getElementById('e-stream');
-            const piDisplay = document.getElementById('pi-stream');
+        // Mirroring strings to ensure a gap-less loop
+        const eContent = (eBase + eBase + eBase);
+        const piContent = (piBase + piBase + piBase);
 
-            // Sliding window: mod 10 extraction
-            let eDigit = eStr[eIndex % eStr.length];
-            let piDigit = piStr[piIndex % piStr.length];
+        const eEl = document.getElementById('e-headline');
+        const piEl = document.getElementById('pi-headline');
 
-            // Update display - adding to the rolling line
-            eDisplay.innerText = (eDisplay.innerText + eDigit).slice(-40);
-            piDisplay.innerText = (piDisplay.innerText + piDigit).slice(-40);
+        eEl.innerText = eContent;
+        piEl.innerText = piContent;
 
-            eIndex++;
-            piIndex++;
-        }
+        let accelerated = false;
 
-        function toggleDrill() {
-            if (interval) {
-                clearInterval(interval);
-                interval = null;
-                document.getElementById('start-btn').innerText = "Resume Flush";
-            } else {
-                interval = setInterval(updateStreams, speed);
-                document.getElementById('start-btn').innerText = "Pause Drill";
-            }
-        }
-
-        function accelerate() {
+        function toggleAcceleration() {
             const btn = document.getElementById('accel-btn');
-            if (speed > 20) {
-                speed = 20; // Maximum simulation speed
-                btn.classList.add('accel-active');
-                btn.innerText = "AT LIGHT SPEED";
+            accelerated = !accelerated;
+
+            if (accelerated) {
+                // Speed of Light Simulation: 1.5 seconds per loop
+                eEl.style.animationDuration = '1.5s';
+                piEl.style.animationDuration = '1.5s';
+                btn.innerText = "SPEED_OF_LIGHT_ACTIVE";
+                btn.classList.add('accel-mode');
             } else {
-                speed = 150; // Normal speed
-                btn.classList.remove('accel-active');
-                btn.innerText = "Accelerate";
-            }
-            
-            if (interval) {
-                clearInterval(interval);
-                interval = setInterval(updateStreams, speed);
+                // Normal Research Speed
+                eEl.style.animationDuration = '30s';
+                piEl.style.animationDuration = '30s';
+                btn.innerText = "ACCELERATE 9Q_FLUSH";
+                btn.classList.remove('accel-mode');
             }
         }
     </script>
-</body>
-</html>
-        The engine performs a 2-adic bit-peel to infer the next residue without long-term storage.
-    </div>
-
-    <div class="status-bar" id="status">STATUS: IDLE_STANDBY</div>
-
-    <script>
-        // High-precision seeds for the 3-Gen logic
-        const piStr = "31415926535897932384626433832795";
-        const eStr  = "27182818284590452353602874713526"; 
-        let index = 0;
-        let running = false;
-
-        function startDrill() {
-            if (running) return;
-            running = true;
-
-            const box = document.getElementById('display');
-            const btn = document.getElementById('drill-btn');
-            const status = document.getElementById('status');
-
-            btn.style.display = 'none';
-            status.innerText = "STATUS: ACTIVE_DRILLING_9Q_STREAM";
-
-            // Main Execution Loop: 60ms total cycle
-            setInterval(() => {
-                // STEP 1: Flush (The 2-adic peel / clear previous state)
-                box.style.opacity = "0";
-                box.classList.remove('snap');
-
-                // STEP 2: Inference (Alternating step between Pi and e)
-                setTimeout(() => {
-                    // Logic: Even indices = Pi, Odd indices = e
-                    if (index % 2 === 0) {
-                        box.innerText = piStr[Math.floor(index / 2) % piStr.length];
-                    } else {
-                        box.innerText = eStr[Math.floor(index / 2) % eStr.length];
-                    }
-                    
-                    // STEP 3: Snap (Speed of light output/flash)
-                    box.style.opacity = "1";
-                    box.classList.add('snap');
-                    
-                    index++;
-                }, 25); // 25ms delay creates the 'snap' feel
-
-            }, 60); // 60ms cycle simulates high-speed hardware processing
-        }
-    </script>
-
 </body>
 </html>
