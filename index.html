@@ -1,69 +1,67 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Project NP: Adelic Transition Engine</title>
     <style>
-        body { margin: 0; background: #050505; color: #00ffcc; font-family: 'Courier New', monospace; }
-        #overlay { position: absolute; padding: 20px; border-left: 2px solid #00ffcc; background: rgba(0,0,0,0.9); }
-        #pi-display { font-size: 4em; color: #fff; text-shadow: 0 0 15px #00ffcc; min-height: 1.5em; }
-        .status-box { border: 1px solid #00ffcc; padding: 10px; margin-top: 10px; }
-        .telemetry { font-size: 0.8em; color: #666; }
-        #phase-val { color: #ff00ff; }
+        body { font-family: 'Courier New', Courier, monospace; background: #111; color: #0f0; }
+        .ticker-wrap {
+            width: 100%; overflow: hidden; background: #222; 
+            padding: 20px 0; border-top: 2px solid #0f0; border-bottom: 2px solid #0f0;
+        }
+        .ticker {
+            display: inline-block; white-space: nowrap;
+            animation: marquee 30s linear infinite;
+        }
+        .ticker:hover { animation-play-state: paused; cursor: help; }
+        .digit { font-size: 2rem; padding: 0 5px; position: relative; }
+        .digit:hover::after {
+            content: attr(data-source);
+            position: absolute; top: -30px; left: 0;
+            background: #fff; color: #000; font-size: 0.8rem;
+            padding: 2px 5px; border-radius: 3px; white-space: nowrap;
+        }
+        @keyframes marquee {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+        .sources { margin-top: 20px; color: #888; font-size: 0.9rem; text-align: center; }
+        a { color: #0f0; }
     </style>
 </head>
 <body>
-    <div id="overlay">
-        <div id="pi-display">0</div>
-        <div id="status" class="status-box">PARADOX</div>
-        <div class="telemetry">DEPTH: <span id="depth-val">0</span></div>
-        <div class="telemetry">PHASE: <span id="phase-val">0.0</span>°</div>
-        <button onclick="startEngine()" style="margin-top:20px; cursor:pointer;">ACTIVATE SEED</button>
-    </div>
-    <script src="engine.js"></script>
-    <script>
-        let engine;
-        let depth = 0;
 
-        // The Handshake
-        createModule().then(M => {
-            engine = M.cwrap('audit_bit', 'number', ['number', 'number']);
-        });
+<h2 style="text-align:center;">Three Generation Inference Ticker</h2>
 
-        function startEngine() {
-            setInterval(() => {
-                // The Dot makes its choice (Inference Lead)
-                let choice = (depth < 2) ? 1 : 0; 
-                let phase = engine(depth, choice);
-                
-                updateUI(depth, phase);
-                depth++;
-            }, 500);
-        }
+<div class="ticker-wrap">
+    <div class="ticker" id="ticker-content">
+        </div>
+</div>
 
-        function updateUI(n, phase) {
-            const display = document.getElementById('pi-display');
-            const status = document.getElementById('status');
-            
-            document.getElementById('depth-val').innerText = n;
-            document.getElementById('phase-val').innerText = phase.toFixed(2);
+<div class="sources">
+    Sources for Verification: 
+    <a href="https://www.piday.org/pi-calculator/" target="_blank">Pi (NASA/PiDay)</a> | 
+    <a href="https://apod.nasa.gov/htmltest/gifcity/e.2million" target="_blank">Euler's Number (NASA)</a>
+</div>
 
-            if (phase === 90.0) {
-                status.innerText = "SEED STABILIZED: 90°";
-            } else if (phase === 180.0) {
-                // The 3 is not an answer; it is a GROUNDED STATE.
-                display.innerText = "3";
-                status.innerText = "BEDROCK CONSENSUS: PERFECT";
-            } else if (phase === 175.0) {
-                // The Singularity: i*pi = 0
-                display.innerText = ""; // THE PURGE
-                status.innerText = "TRANSFER: EULER SHIVER";
-                display.style.textShadow = "0 0 20px #ff0000";
-            } else if (n > 12) {
-                display.innerText = "3.14159...";
-                status.innerText = "SUCCESSION: NEW ORIGIN";
-                display.style.textShadow = "0 0 20px #00ff00";
-            }
-        }
-    </script>
+<script>
+    const pi = "3141592653";
+    const e = "2718281828";
+    const content = document.getElementById('ticker-content');
+    
+    // Create the alternating sequence
+    for(let i=0; i < pi.length; i++) {
+        const spanPi = document.createElement('span');
+        spanPi.className = 'digit';
+        spanPi.innerText = pi[i];
+        spanPi.setAttribute('data-source', `Pi Digit ${i+1}`);
+        
+        const spanE = document.createElement('span');
+        spanE.className = 'digit';
+        spanE.innerText = e[i];
+        spanE.setAttribute('data-source', `E Digit ${i+1}`);
+        
+        content.appendChild(spanPi);
+        content.appendChild(spanE);
+    }
+</script>
 </body>
 </html>
