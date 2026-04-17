@@ -2,104 +2,144 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>9Q Inference Drill | Project NP</title>
     <style>
-        :root {
-            --neon-green: #00ff41;
-            --dark-bg: #000000;
-        }
-
         body {
-            background-color: var(--dark-bg);
-            color: var(--neon-green);
-            font-family: 'Courier New', Courier, monospace;
-            margin: 0;
+            background: #000;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100vh;
+            margin: 0;
             overflow: hidden;
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        /* The "Pao Ma Deng" / Headline Drill Box */
-        #display {
-            font-size: 12rem;
-            font-weight: 900;
-            border: 10px double var(--neon-green);
-            width: 300px;
-            height: 300px;
+        .stream-container {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: opacity 0.02s ease-in-out;
-            box-shadow: 0 0 50px rgba(0, 255, 65, 0.3);
+            flex-direction: column;
+            gap: 20px;
+            width: 90%;
         }
 
-        /* The "Snap" flash effect */
-        .snap {
-            color: #ffffff;
-            text-shadow: 0 0 40px var(--neon-green), 0 0 80px #fff;
+        .stream-label {
+            font-size: 1rem;
+            color: #555;
+            letter-spacing: 3px;
+            margin-bottom: 5px;
         }
 
-        .description {
-            max-width: 700px;
-            margin-top: 40px;
-            text-align: center;
-            font-size: 0.9rem;
-            color: #666;
-            line-height: 1.6;
-            border-top: 1px solid #333;
-            padding-top: 20px;
+        /* The rolling number window */
+        .rolling-stream {
+            font-size: 4rem;
+            font-weight: bold;
+            white-space: nowrap;
+            border: 2px solid #222;
+            padding: 10px;
+            overflow: hidden;
+            background: rgba(0, 255, 65, 0.02);
+            position: relative;
+        }
+
+        #e-stream { border-left: 5px solid #00ff41; } /* Euler Precedence */
+        #pi-stream { border-left: 5px solid #0088ff; color: #0088ff; }
+
+        .controls {
+            margin-top: 50px;
+            display: flex;
+            gap: 20px;
         }
 
         button {
-            background: transparent;
-            color: var(--neon-green);
-            border: 3px solid var(--neon-green);
-            padding: 20px 50px;
-            font-size: 1.5rem;
-            font-family: inherit;
-            font-weight: bold;
+            background: none;
+            border: 2px solid #00ff41;
+            color: #00ff41;
+            padding: 15px 30px;
             cursor: pointer;
-            margin-top: 30px;
+            font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 5px;
         }
 
-        button:hover {
-            background: var(--neon-green);
-            color: #000;
-            box-shadow: 0 0 30px var(--neon-green);
-        }
-
-        .status-bar {
-            margin-top: 20px;
-            font-size: 0.8rem;
-            color: #444;
-        }
+        button:hover { background: #00ff41; color: #000; }
+        .accel-active { background: #ff0000 !important; color: #fff !important; border-color: #ff0000 !important; box-shadow: 0 0 20px #ff0000; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1 style="margin:0;">INFERENCE DRILL</h1>
-        <p style="color: #444;">3-GEN STAIRCASE: &pi;(3.14) & e(2.71)</p>
+    <div class="stream-container">
+        <div>
+            <div class="stream-label">EULER PRECEDENCE (GROWTH)</div>
+            <div id="e-stream" class="rolling-stream">--------------------</div>
+        </div>
+        <div>
+            <div class="stream-label">PI ROTATION (CYCLE)</div>
+            <div id="pi-stream" class="rolling-stream">--------------------</div>
+        </div>
     </div>
 
-    <div id="display">0</div>
+    <div class="controls">
+        <button onclick="toggleDrill()" id="start-btn">Initiate 9Q Flush</button>
+        <button onclick="accelerate()" id="accel-btn">Accelerate (Speed of Light)</button>
+    </div>
 
-    <button id="drill-btn" onclick="startDrill()">Start 9Q Flush</button>
+    <script>
+        const piStr = "314159265358979323846264338327950288419716939937510";
+        const eStr  = "271828182845904523536028747135266249775724709369995";
+        
+        let eIndex = 0;
+        let piIndex = 0;
+        let speed = 150; 
+        let interval;
 
-    <div class="description">
-        <strong>Procedure:</strong> Alternating digits from 3.14 and 2.71 seeds. <br>
-        Each digit is <em>flushed</em> at speed-of-light simulation (60ms cycles). <br>
+        function updateStreams() {
+            const eDisplay = document.getElementById('e-stream');
+            const piDisplay = document.getElementById('pi-stream');
+
+            // Sliding window: mod 10 extraction
+            let eDigit = eStr[eIndex % eStr.length];
+            let piDigit = piStr[piIndex % piStr.length];
+
+            // Update display - adding to the rolling line
+            eDisplay.innerText = (eDisplay.innerText + eDigit).slice(-40);
+            piDisplay.innerText = (piDisplay.innerText + piDigit).slice(-40);
+
+            eIndex++;
+            piIndex++;
+        }
+
+        function toggleDrill() {
+            if (interval) {
+                clearInterval(interval);
+                interval = null;
+                document.getElementById('start-btn').innerText = "Resume Flush";
+            } else {
+                interval = setInterval(updateStreams, speed);
+                document.getElementById('start-btn').innerText = "Pause Drill";
+            }
+        }
+
+        function accelerate() {
+            const btn = document.getElementById('accel-btn');
+            if (speed > 20) {
+                speed = 20; // Maximum simulation speed
+                btn.classList.add('accel-active');
+                btn.innerText = "AT LIGHT SPEED";
+            } else {
+                speed = 150; // Normal speed
+                btn.classList.remove('accel-active');
+                btn.innerText = "Accelerate";
+            }
+            
+            if (interval) {
+                clearInterval(interval);
+                interval = setInterval(updateStreams, speed);
+            }
+        }
+    </script>
+</body>
+</html>
         The engine performs a 2-adic bit-peel to infer the next residue without long-term storage.
     </div>
 
