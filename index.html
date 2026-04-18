@@ -2,104 +2,131 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Project NP | Adelic Witness</title>
+    <title>Project NP | Adelic Forensic Audit</title>
     <style>
         :root { --accent: #00ff41; --bg: #000; }
-        body, html { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--accent); font-family: monospace; overflow: hidden; }
+        body, html { margin: 0; padding: 0; background: var(--bg); color: var(--accent); font-family: 'Courier New', monospace; height: 100vh; overflow: hidden; }
         
-        #header { position: absolute; top: 0; width: 100%; padding: 15px; background: rgba(0,0,0,0.95); z-index: 100; border-bottom: 1px solid #111; }
-        .info { display: inline-block; margin-right: 40px; }
+        #header { position: absolute; top: 0; width: 100%; padding: 15px; background: rgba(0,0,0,0.9); z-index: 1000; border-bottom: 1px solid #222; display: flex; gap: 50px; }
+        .stat { display: flex; flex-direction: column; }
         .label { color: #555; font-size: 0.7rem; text-transform: uppercase; }
-        .value { font-size: 0.9rem; color: var(--accent); }
+        
+        #stage { display: flex; width: 100vw; height: 100vh; }
+        .panel { flex: 1; position: relative; border-right: 1px solid #222; overflow-y: auto; }
+        
+        /* THE TEXT GRID: This makes it copiable */
+        .digit-grid { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            display: none; grid-template-columns: repeat(auto-fill, 18px); 
+            padding: 80px 20px; box-sizing: border-box; background: #fff; color: #000;
+            z-index: 500; font-weight: bold; line-height: 18px;
+        }
 
-        #manifold { display: flex; width: 100vw; height: 100vh; }
-        .panel { flex: 1; position: relative; border-right: 1px solid #111; }
         canvas { display: block; width: 100%; height: 100%; }
 
-        #controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; gap: 10px; }
-        button { background: #000; border: 1px solid var(--accent); color: var(--accent); padding: 10px 25px; cursor: pointer; font-family: inherit; }
+        #controls { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 2000; }
+        button { background: var(--bg); border: 1px solid var(--accent); color: var(--accent); padding: 10px 25px; cursor: pointer; font-family: inherit; }
         button:hover { background: var(--accent); color: #000; }
-        
-        .panel-id { position: absolute; top: 80px; left: 20px; font-size: 3rem; opacity: 0.1; pointer-events: none; }
     </style>
 </head>
 <body>
 
 <div id="header">
-    <div class="info"><div class="label">Coordinate Phase</div><div id="coord" class="value">Q^Q + 0</div></div>
-    <div class="info"><div class="label">Parity</div><div class="value">180!! STABLE</div></div>
-    <div class="info"><div class="label">Observation Mode</div><div id="status" class="value">INFINITE_WITNESS</div></div>
+    <div class="stat"><span class="label">Coordinate</span><span id="coord">Q^Q + 0</span></div>
+    <div class="stat"><span class="label">Parity</span><span>180!! STABLE</span></div>
+    <div class="stat"><span class="label">Status</span><span id="status">FLOWING</span></div>
 </div>
 
-<div id="manifold">
-    <div class="panel"><canvas id="c-pi"></canvas><div class="panel-id">π</div></div>
-    <div class="panel"><canvas id="c-e"></canvas><div class="panel-id">e</div></div>
+<div id="stage">
+    <div class="panel">
+        <canvas id="can-pi"></canvas>
+        <div id="grid-pi" class="digit-grid"></div>
+    </div>
+    <div class="panel">
+        <canvas id="can-e"></canvas>
+        <div id="grid-e" class="digit-grid"></div>
+    </div>
 </div>
 
 <div id="controls">
-    <button id="snap-btn">SNAP & COPY</button>
-    <button id="adv-btn">ADVANCE (SPACE)</button>
+    <button onclick="snap()">SNAP & COPY DIGITS</button>
+    <button onclick="advance()">ADVANCE SCALE (SPACE)</button>
 </div>
 
 <script>
-    const canvasConfig = [
-        { id: 'c-pi', pattern: [3, 1, 4, 1, 5, 9, 2, 6, 5, 3] },
-        { id: 'c-e', pattern: [2, 7, 1, 8, 2, 8, 1, 8, 2, 8] }
+    const configs = [
+        { id: 'can-pi', grid: 'grid-pi', p: [3, 1, 4, 1, 5, 9, 2, 6, 5, 3] },
+        { id: 'can-e', grid: 'grid-e', p: [2, 7, 1, 8, 2, 8, 1, 8, 2, 8] }
     ];
 
     let clicks = 0n;
     let active = true;
     const ctxs = [];
-    const size = 16;
 
     function init() {
-        canvasConfig.forEach(cfg => {
+        ctxs.length = 0;
+        configs.forEach(cfg => {
             const c = document.getElementById(cfg.id);
-            const ctx = c.getContext('2d', { alpha: false });
+            const ctx = c.getContext('2d');
             c.width = c.parentElement.clientWidth;
             c.height = c.parentElement.clientHeight;
-            ctxs.push({ ctx, cfg, drops: Array(Math.floor(c.width/size)).fill(0) });
+            ctxs.push({ ctx, cfg, drops: Array(Math.floor(c.width/18)).fill(0) });
         });
     }
 
-    function getResidue(scale, offset, p) {
+    function getRes(scale, offset, p) {
         return p[Number((scale + BigInt(offset)) % BigInt(p.length))];
     }
 
-    function flow() {
+    function draw() {
         if (!active) return;
-        ctxs.forEach(obj => {
-            obj.ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-            obj.ctx.fillRect(0, 0, obj.ctx.canvas.width, obj.ctx.canvas.height);
-            obj.ctx.fillStyle = '#0f0';
-            obj.ctx.font = size + "px monospace";
-
-            obj.drops.forEach((y, i) => {
-                const digit = getResidue(clicks, i + y, obj.cfg.pattern);
-                obj.ctx.fillText(digit, i * size, y * size);
-                if (y * size > obj.ctx.canvas.height && Math.random() > 0.98) obj.drops[i] = 0;
-                obj.drops[i]++;
+        ctxs.forEach(o => {
+            o.ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            o.ctx.fillRect(0, 0, o.ctx.canvas.width, o.ctx.canvas.height);
+            o.ctx.fillStyle = '#0f0';
+            o.ctx.font = "16px monospace";
+            o.drops.forEach((y, i) => {
+                const d = getRes(clicks, i + y, o.cfg.p);
+                o.ctx.fillText(d, i * 18, y * 18);
+                if (y * 18 > o.ctx.canvas.height && Math.random() > 0.98) o.drops[i] = 0;
+                o.drops[i]++;
             });
         });
         clicks += 1n;
         document.getElementById('coord').innerText = `Q^Q + ${clicks}`;
-        requestAnimationFrame(flow);
+        requestAnimationFrame(draw);
     }
 
     function snap() {
         active = false;
-        ctxs.forEach(obj => {
-            obj.ctx.fillStyle = '#fff';
-            obj.ctx.fillRect(0, 0, obj.ctx.canvas.width, obj.ctx.canvas.height);
-            obj.ctx.fillStyle = '#000';
-            obj.ctx.font = `bold ${size}px monospace`;
-            for(let x=0; x < obj.ctx.canvas.width/size; x++) {
-                for(let y=0; y < obj.ctx.canvas.height/size; y++) {
-                    obj.ctx.fillText(getResidue(clicks, x+y, obj.cfg.pattern), x*size, y*size);
-                }
+        configs.forEach(cfg => {
+            const grid = document.getElementById(cfg.grid);
+            grid.style.display = 'grid';
+            let content = '';
+            // Generate 500 copiable digits for the audit
+            for(let i=0; i<500; i++) {
+                content += `<span>${getRes(clicks, i, cfg.p)}</span>`;
             }
+            grid.innerHTML = content;
         });
-        document.getElementById('status').innerText = "AUDIT_PAUSED";
+        document.getElementById('status').innerText = "AUDIT_READY (COPY_ACTIVE)";
+    }
+
+    function advance() {
+        active = true;
+        configs.forEach(cfg => document.getElementById(cfg.grid).style.display = 'none');
+        document.getElementById('status').innerText = "FLOWING";
+        clicks += 1000n;
+        draw();
+    }
+
+    window.onresize = init;
+    window.onkeydown = (e) => { if(e.code === 'Space') advance(); };
+    init();
+    draw();
+</script>
+</body>
+</html>
     }
 
     function advance() {
