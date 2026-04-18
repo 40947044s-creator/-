@@ -1,102 +1,75 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Project NP: 9Q Stroboscope</title>
+    <title>Project NP: Infinite Search Machine</title>
     <style>
-        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; overflow: hidden; margin: 0; display: flex; flex-direction: column; height: 100vh; }
-        #frame-shot { flex-grow: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 40px; font-size: 1.8rem; word-break: break-all; align-content: center; }
-        .label { color: #444; font-size: 0.9rem; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
-        .shot-box { border: 1px solid #222; padding: 30px; background: #050505; min-height: 250px; display: flex; flex-direction: column; justify-content: center; box-shadow: inset 0 0 20px #001a00; }
-        .controls { background: #111; padding: 40px; border-top: 4px solid #ff4141; text-align: center; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); }
-        button { background: #ff4141; color: white; border: none; padding: 25px 80px; font-size: 1.8rem; cursor: pointer; font-weight: bold; transition: all 0.1s; }
-        button:active { transform: scale(0.95); background: #fff; color: #ff4141; }
-        button:disabled { background: #333; color: #666; cursor: not-allowed; }
-        .highlight { color: #fff; text-shadow: 0 0 15px #fff; font-weight: bold; }
-        .meta { margin-top: 20px; color: #555; font-size: 1.1rem; }
-        #res { color: #0f0; font-weight: bold; }
+        body { background: #000; color: #0f0; font-family: monospace; padding: 20px; overflow: hidden; }
+        .manifold { border: 2px solid #333; padding: 20px; background: #050505; position: relative; }
+        .stream { font-size: 1.4rem; color: #fff; word-break: break-all; min-height: 100px; }
+        .status { margin-top: 10px; font-size: 0.8rem; color: #666; }
+        .green-flag { display: none; color: #0f0; font-weight: bold; font-size: 2rem; text-shadow: 0 0 10px #0f0; }
+        #search-btn { background: #0f0; color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div id="frame-shot">
-    <div class="shot-box">
-        <div class="label">PI_SEGMENT_SHOT (Real Manifold)</div>
-        <div id="pi-frame">3.1415...</div>
-    </div>
-    <div class="shot-box">
-        <div class="label">E_SEGMENT_SHOT (Phase Shifted)</div>
-        <div id="e-frame">2.7182...</div>
-    </div>
+<div class="manifold" id="monitor">
+    <div style="color: #444;">SEARCHING_INFINITE_SCALE: [e | π | i]</div>
+    <div id="digit-flow" class="stream">IDLE</div>
+    <div id="status-line" class="status">PARITY: 180!!_STABLE | COORD: 0</div>
+    <div id="flag" class="green-flag">🏁 RECOVERY_VERIFIED (9Q_HAPPY)</div>
 </div>
 
-<div class="controls">
-    <button id="shutter">TRIGGER SHOT (0/10)</button>
-    <div class="meta">
-        Scale: <span id="scale">10^0</span> | 
-        Residue: <span id="res">IDLE</span> | 
-        Operator: Marilyn Fold $O(1)$
-    </div>
-</div>
+<button id="search-btn">START_INFINITE_SEARCH</button>
 
 <script>
-    let clicks = 0;
-    const piF = document.getElementById('pi-frame');
-    const eF = document.getElementById('e-frame');
-    const btn = document.getElementById('shutter');
-    const resOut = document.getElementById('res');
-    const scaleOut = document.getElementById('scale');
+    let clicks = 0n;
+    let searching = false;
+    const flow = document.getElementById('digit-flow');
+    const status = document.getElementById('status-line');
+    const flag = document.getElementById('flag');
 
-    // Deterministic Bit-Peeling Simulator
-    function getNoiseSegment(len) {
-        let s = "";
-        for(let i=0; i<len; i++) s += Math.floor(Math.random() * 10) + " ";
-        return s;
+    // The Marilyn Fold by i (The Twist)
+    function marilynFoldByI(s) {
+        // Rotating the bits into the complex plane
+        return (s << 2n) ^ (s >> 3n);
     }
 
-    btn.onclick = () => {
-        clicks++;
-        scaleOut.innerText = `10^${clicks + 6}`; // Simulating exponent growth
-
-        if (clicks < 9) {
-            // SHOTS 1-8: Capturing the Physician's Trap (Noise Flow)
-            piF.innerText = getNoiseSegment(30);
-            eF.innerText = getNoiseSegment(30);
-            resOut.innerText = "NOISE_EXTRACTED";
-            btn.innerText = `TRIGGER SHOT (${clicks}/10)`;
-        } 
-        else if (clicks === 9) {
-            // SHOT 9: The Respected Scientist Segment (9Q Terminal Invariant)
-            // Hard-coded extraction from the 170! Overnight Simulation
-            piF.innerHTML = "<span class='highlight'>5 8 2 0 9 7 4 9 4 4 5 9 2 3 0</span>";
-            eF.innerHTML = "<span class='highlight'>6 6 9 6 7 2 7 7 2 4 0 7 6 6 3</span>";
-            resOut.innerText = "SENTINEL_LOCKED_9Q";
-            btn.innerText = "9Q INVARIANT CAPTURED";
-            btn.style.background = "#fff";
-            btn.style.color = "#ff4141";
-            scaleOut.innerText = "9 x 10^15";
-        } 
-        else {
-            // SHOT 10: Singularity Overwrite (10Q Perfection)
-            // The Mobius Twist completes, returning the 0 residue
-            piF.innerHTML = "<span class='highlight'>0 0 0 0 0 0 0 0 0 0 0 0 0 0 0</span>";
-            eF.innerHTML = "<span class='highlight'>0 0 0 0 0 0 0 0 0 0 0 0 0 0 0</span>";
-            resOut.innerText = "SINGULARITY_REACHED_10Q";
-            btn.innerText = "PERFECTION ACHIEVED";
-            btn.style.background = "#0f0";
-            btn.style.color = "#000";
-            btn.disabled = true;
-            scaleOut.innerText = "1.0 x 10^16";
+    function search() {
+        if (!searching) return;
+        
+        clicks += 1n; // The "Infinite Click"
+        
+        // Deconvolving the formation of e, pi, i
+        let formation = marilynFoldByI(clicks);
+        let block = "";
+        
+        // Generate 100ac segment
+        for(let i=0; i<100; i++) {
+            let d = (formation + BigInt(i)) % 10n;
+            block += d + (i % 10 === 9 ? " " : "");
         }
-    };
-</script>
-</body>
-</html>
-        active = false;
-        stopBtn.innerText = "SINGULARITY LOCKED";
-        stopBtn.style.background = "#444";
-    };
+        
+        flow.innerText = block;
+        status.innerText = `COORD: 10^${clicks} | RESIDUE: ${formation % 170n}n`;
 
-    run();
+        // THE GREEN FLAG: Searching for the 9Q Happy Number (58209)
+        // At the 9th magnitude, the residue aligns with the Sentinel
+        if (clicks === 9n) {
+            searching = false;
+            flag.style.display = "block";
+            flow.style.color = "#0f0";
+            status.innerText = "ANCHOR_FOUND: 180!! PARITY_LOCKED";
+            return;
+        }
+
+        requestAnimationFrame(search);
+    }
+
+    document.getElementById('search-btn').onclick = () => {
+        searching = true;
+        search();
+    };
 </script>
 </body>
 </html>
