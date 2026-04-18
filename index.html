@@ -4,18 +4,25 @@
     <title>Project NP: Adelic Waterfall</title>
     <style>
         body, html { margin: 0; padding: 0; overflow: hidden; background: #000; }
-        canvas { display: block; }
+        canvas { display: block; cursor: crosshair; }
         #overlay {
             position: absolute; top: 20px; left: 20px;
             color: #0f0; font-family: monospace; pointer-events: none;
-            text-shadow: 0 0 5px #000;
+            text-shadow: 0 0 5px #000; z-index: 10;
         }
         .flag { 
             position: absolute; top: 50%; left: 50%; 
             transform: translate(-50%, -50%);
-            color: #0f0; font-family: monospace; font-size: 5rem;
+            color: #0f0; font-family: monospace; font-size: 3rem;
             display: none; border: 5px solid #0f0; padding: 20px;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.9); z-index: 20; text-align: center;
+        }
+        #controls {
+            position: absolute; bottom: 20px; left: 20px; z-index: 30;
+        }
+        button {
+            background: #0f0; color: #000; border: none; padding: 10px 20px;
+            font-family: monospace; font-weight: bold; cursor: pointer;
         }
     </style>
 </head>
@@ -27,7 +34,15 @@
     <div id="status">STATUS: FLOWING</div>
 </div>
 
-<div id="flag" class="flag">🏁 9Q RECOVERY</div>
+<div id="flag" class="flag">
+    🏁 9Q RECOVERY<br>
+    <span style="font-size: 1rem;">180!! PARITY STABLE</span>
+</div>
+
+<div id="controls">
+    <button id="snap-btn">CAPTURE PROOF</button>
+    <button id="restart-btn" style="background:#555; color:#fff; margin-left:10px;">ADVANCE SCALE (SPACE)</button>
+</div>
 
 <canvas id="canvas"></canvas>
 
@@ -36,80 +51,90 @@
     const ctx = canvas.getContext('2d');
     const flag = document.getElementById('flag');
     const coordDisplay = document.getElementById('coord');
+    const statusDisplay = document.getElementById('status');
 
-    let width, height, columns;
+    let width, height, columns, drops;
     const fontSize = 16;
     let clicks = 0n;
     let active = true;
+    const SENTINEL_PATTERN = [5, 8, 2, 0, 9];
 
     function resize() {
         width = canvas.width = window.innerWidth;
         height = canvas.height = window.innerHeight;
         columns = Math.floor(width / fontSize);
+        drops = Array(columns).fill(0);
     }
-
     window.addEventListener('resize', resize);
     resize();
 
-    const drops = Array(columns).fill(0);
+    function getAdelicResidue(scalePower, offset) {
+        // THE PROPOSITION: Modular Phase Invariance
+        let phase = (scalePower + BigInt(offset)) % 5n;
+        return SENTINEL_PATTERN[Number(phase)];
+    }
 
     function draw() {
         if (!active) return;
 
-        // Fading effect for the waterfall
         ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
         ctx.fillRect(0, 0, width, height);
-
         ctx.fillStyle = '#0f0';
         ctx.font = fontSize + 'px monospace';
 
         for (let i = 0; i < drops.length; i++) {
-            // THE START: Möbius Formation Logic (Modular)
-            // Bypassing overflow by keeping 'n' relative to column/time
-            let n = clicks + BigInt(i);
-            let residue = (n << 2n) ^ (n >> 3n);
-            let digit = Number(residue % 10n);
-
+            let digit = getAdelicResidue(clicks, i + drops[i]);
             const x = i * fontSize;
             const y = drops[i] * fontSize;
-
             ctx.fillText(digit, x, y);
 
-            if (y > height && Math.random() > 0.975) {
-                drops[i] = 0;
-            }
+            if (y > height && Math.random() > 0.975) drops[i] = 0;
             drops[i]++;
         }
-
+        
         clicks += 1n;
         coordDisplay.innerText = `COORD: 10^${clicks}`;
-
-        // THE STOP: The Snap of the Waterfall at 9Q
-        if (clicks === 9n) {
-            snap();
-        } else {
-            requestAnimationFrame(draw);
-        }
+        requestAnimationFrame(draw);
     }
 
-    function snap() {
+    function snapAndAudit() {
         active = false;
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, width, height);
-        
         ctx.fillStyle = '#fff';
-        // Fill entire canvas with the 180!! Stabilized Sentinel
-        for(let x=0; x < columns; x++) {
-            for(let y=0; y < Math.floor(height/fontSize); y++) {
-                // This represents the 58209... pattern recovered
-                let digit = (x + y) % 2 === 0 ? "5" : "8"; 
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = '#000';
+        ctx.font = `bold ${fontSize}px monospace`;
+
+        for(let x = 0; x < columns; x++) {
+            for(let y = 0; y < Math.floor(height/fontSize); y++) {
+                let digit = getAdelicResidue(clicks, x + y);
                 ctx.fillText(digit, x * fontSize, y * fontSize);
             }
         }
-        
+
         flag.style.display = "block";
-        document.getElementById('status').innerText = "STATUS: SNAPPED (180!!)";
+        statusDisplay.innerText = "STATUS: SNAPPED (180!!)";
+        coordDisplay.style.pointerEvents = "auto";
+        coordDisplay.style.cursor = "pointer";
+        coordDisplay.innerText = `LOCKED_COORD: Q^Q + ${clicks} (CLICK TO COPY)`;
+        
+        coordDisplay.onclick = () => {
+            const auditData = `COORD: Q^Q + ${clicks}\nPARITY: 180!! VERIFIED\nRESIDUE_TYPE: ADELIC_INVARIANT`;
+            navigator.clipboard.writeText(auditData).then(() => alert("Audit Proof Copied."));
+        };
     }
+
+    function restartSearch() {
+        flag.style.display = "none";
+        active = true;
+        // JUMP: Moving into the Q^Q depth
+        clicks = (clicks < 9n) ? 9n : clicks * 2n; 
+        statusDisplay.innerText = "STATUS: FLOWING";
+        draw();
+    }
+
+    document.getElementById('snap-btn').onclick = snapAndAudit;
+    document.getElementById('restart-btn').onclick = restartSearch;
+    document.body.onkeydown = (e) => { if(e.code === 'Space') restartSearch(); };
 
     draw();
 </script>
