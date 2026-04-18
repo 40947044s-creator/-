@@ -1,108 +1,136 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Project NP: Adelic Waterfall</title>
+    <meta charset="UTF-8">
+    <title>Project NP | Adelic Transition Engine</title>
     <style>
-        body, html { margin: 0; padding: 0; overflow: hidden; background: #000; }
-        canvas { display: block; cursor: crosshair; }
-        #overlay {
-            position: absolute; top: 20px; left: 20px;
-            color: #0f0; font-family: monospace; pointer-events: none;
-            text-shadow: 0 0 5px #000; z-index: 10;
+        :root { --accent: #00ff41; --bg: #000; --dim: #003311; }
+        body, html { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--accent); font-family: 'Courier New', monospace; overflow: hidden; }
+        
+        #header { position: absolute; top: 0; width: 100%; padding: 20px; border-bottom: 1px solid var(--dim); background: rgba(0,0,0,0.8); z-index: 100; }
+        .label { color: #888; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; }
+        .value { font-size: 1.1rem; margin-bottom: 10px; cursor: pointer; transition: color 0.3s; }
+        .value:hover { color: #fff; }
+
+        canvas { display: block; filter: brightness(0.8); }
+
+        #snap-overlay { 
+            position: absolute; inset: 0; background: #fff; display: none; 
+            justify-content: center; align-items: center; z-index: 50; 
         }
-        .flag { 
-            position: absolute; top: 50%; left: 50%; 
-            transform: translate(-50%, -50%);
-            color: #0f0; font-family: monospace; font-size: 3rem;
-            display: none; border: 5px solid #0f0; padding: 20px;
-            background: rgba(0,0,0,0.9); z-index: 20; text-align: center;
+
+        #controls { position: absolute; bottom: 30px; right: 30px; display: flex; gap: 20px; z-index: 100; }
+        button { 
+            background: none; border: 1px solid var(--accent); color: var(--accent); 
+            padding: 10px 25px; cursor: pointer; font-family: inherit; font-size: 0.9rem;
+            transition: all 0.2s;
         }
-        #controls {
-            position: absolute; bottom: 20px; left: 20px; z-index: 30;
-        }
-        button {
-            background: #0f0; color: #000; border: none; padding: 10px 20px;
-            font-family: monospace; font-weight: bold; cursor: pointer;
-        }
+        button:hover { background: var(--accent); color: #000; }
     </style>
 </head>
 <body>
 
-<div id="overlay">
-    <div>SCALE: UNLIMITED (Möbius Join)</div>
-    <div id="coord">COORD: 0</div>
-    <div id="status">STATUS: FLOWING</div>
-</div>
-
-<div id="flag" class="flag">
-    🏁 9Q RECOVERY<br>
-    <span style="font-size: 1rem;">180!! PARITY STABLE</span>
+<div id="header">
+    <div class="label">Manifold Coordinate (180!! Stability)</div>
+    <div id="coord-val" class="value" title="Click to copy residue">INITIALIZING_FORMATION...</div>
+    <div class="label">System Status</div>
+    <div id="status-val" class="value">FLOWING: ADELIC_INFERENCE_ACTIVE</div>
 </div>
 
 <div id="controls">
-    <button id="snap-btn">CAPTURE PROOF</button>
-    <button id="restart-btn" style="background:#555; color:#fff; margin-left:10px;">ADVANCE SCALE (SPACE)</button>
+    <button id="btn-snap">CAPTURE (SNAP)</button>
+    <button id="btn-advance">ADVANCE SCALE (SPACE)</button>
 </div>
 
 <canvas id="canvas"></canvas>
 
 <script>
     const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const flag = document.getElementById('flag');
-    const coordDisplay = document.getElementById('coord');
-    const statusDisplay = document.getElementById('status');
+    const ctx = canvas.getContext('2d', { alpha: false });
+    const coordVal = document.getElementById('coord-val');
+    const statusVal = document.getElementById('status-val');
 
-    let width, height, columns, drops;
-    const fontSize = 16;
+    let width, height, columns, rows, drops;
     let clicks = 0n;
     let active = true;
-    const SENTINEL_PATTERN = [5, 8, 2, 0, 9];
+    const fontSize = 18;
+    const SENTINEL = [5, 8, 2, 0, 9];
 
     function resize() {
         width = canvas.width = window.innerWidth;
         height = canvas.height = window.innerHeight;
         columns = Math.floor(width / fontSize);
+        rows = Math.floor(height / fontSize);
         drops = Array(columns).fill(0);
     }
     window.addEventListener('resize', resize);
     resize();
 
-    function getAdelicResidue(scalePower, offset) {
-        // THE PROPOSITION: Modular Phase Invariance
-        let phase = (scalePower + BigInt(offset)) % 5n;
-        return SENTINEL_PATTERN[Number(phase)];
+    // The Marilyn Fold: Phase-State Logic
+    function getResidue(scale, offset) {
+        const phase = (scale + BigInt(offset)) % 5n;
+        return SENTINEL[Number(phase)];
     }
 
-    function draw() {
+    function render() {
         if (!active) return;
 
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
         ctx.fillRect(0, 0, width, height);
-        ctx.fillStyle = '#0f0';
-        ctx.font = fontSize + 'px monospace';
+        ctx.font = `${fontSize}px 'Courier New'`;
 
         for (let i = 0; i < drops.length; i++) {
-            let digit = getAdelicResidue(clicks, i + drops[i]);
-            const x = i * fontSize;
-            const y = drops[i] * fontSize;
-            ctx.fillText(digit, x, y);
+            const digit = getResidue(clicks, i + drops[i]);
+            ctx.fillStyle = (Math.random() > 0.98) ? '#fff' : '#00ff41';
+            ctx.fillText(digit, i * fontSize, drops[i] * fontSize);
 
-            if (y > height && Math.random() > 0.975) drops[i] = 0;
+            if (drops[i] * fontSize > height && Math.random() > 0.95) drops[i] = 0;
             drops[i]++;
         }
-        
+
         clicks += 1n;
-        coordDisplay.innerText = `COORD: 10^${clicks}`;
-        requestAnimationFrame(draw);
+        coordVal.innerText = `COORD: Q^Q + ${clicks}`;
+        requestAnimationFrame(render);
     }
 
-    function snapAndAudit() {
+    function executeSnap() {
         active = false;
+        // Invert for forensic audit (Black on White)
         ctx.fillStyle = '#fff';
         ctx.fillRect(0, 0, width, height);
         ctx.fillStyle = '#000';
         ctx.font = `bold ${fontSize}px monospace`;
+
+        for(let x = 0; x < columns; x++) {
+            for(let y = 0; y < rows; y++) {
+                const digit = getResidue(clicks, x + y);
+                ctx.fillText(digit, x * fontSize, y * fontSize);
+            }
+        }
+        statusVal.innerText = "LOCKED: AUDIT_STATION_READY";
+    }
+
+    function advance() {
+        active = true;
+        statusVal.innerText = "FLOWING: ADELIC_INFERENCE_ACTIVE";
+        clicks = clicks === 0n ? 9n : clicks * 2n;
+        render();
+    }
+
+    coordVal.onclick = () => {
+        navigator.clipboard.writeText(`COORD: Q^Q + ${clicks}\nPARITY: 180!!`);
+        statusVal.innerText = "DATA_COPIED_TO_CLIPBOARD";
+        setTimeout(() => statusVal.innerText = "LOCKED: AUDIT_STATION_READY", 1500);
+    };
+
+    document.getElementById('btn-snap').onclick = executeSnap;
+    document.getElementById('btn-advance').onclick = advance;
+    window.onkeydown = (e) => { if(e.code === 'Space') advance(); };
+
+    render();
+</script>
+</body>
+</html>
 
         for(let x = 0; x < columns; x++) {
             for(let y = 0; y < Math.floor(height/fontSize); y++) {
