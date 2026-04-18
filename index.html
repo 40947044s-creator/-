@@ -2,104 +2,123 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Project NP | Dual-Ancestor Audit</title>
+    <title>Project NP | Adelic Witness</title>
     <style>
-        :root { --accent: #00ff41; --bg: #000; --dim: #003311; }
+        :root { --accent: #00ff41; --bg: #000; }
         body, html { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--accent); font-family: monospace; overflow: hidden; }
         
-        #header { position: absolute; top: 0; width: 100%; padding: 15px; border-bottom: 1px solid var(--dim); background: rgba(0,0,0,0.9); z-index: 100; display: flex; justify-content: space-between; }
-        .audit-info { flex: 1; }
-        .label { color: #888; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; }
-        .value { font-size: 0.95rem; margin-top: 4px; color: var(--accent); }
+        #header { position: absolute; top: 0; width: 100%; padding: 15px; background: rgba(0,0,0,0.95); z-index: 100; border-bottom: 1px solid #111; }
+        .info { display: inline-block; margin-right: 40px; }
+        .label { color: #555; font-size: 0.7rem; text-transform: uppercase; }
+        .value { font-size: 0.9rem; color: var(--accent); }
 
-        #container { display: flex; width: 100vw; height: 100vh; }
-        .panel { flex: 1; position: relative; border-right: 1px solid var(--dim); }
+        #manifold { display: flex; width: 100vw; height: 100vh; }
+        .panel { flex: 1; position: relative; border-right: 1px solid #111; }
         canvas { display: block; width: 100%; height: 100%; }
 
-        .panel-label { position: absolute; bottom: 80px; left: 20px; font-size: 2rem; opacity: 0.2; pointer-events: none; }
-
         #controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; gap: 10px; }
-        button { background: #000; border: 1px solid var(--accent); color: var(--accent); padding: 8px 20px; cursor: pointer; font-family: inherit; }
+        button { background: #000; border: 1px solid var(--accent); color: var(--accent); padding: 10px 25px; cursor: pointer; font-family: inherit; }
         button:hover { background: var(--accent); color: #000; }
+        
+        .panel-id { position: absolute; top: 80px; left: 20px; font-size: 3rem; opacity: 0.1; pointer-events: none; }
     </style>
 </head>
 <body>
 
 <div id="header">
-    <div class="audit-info">
-        <div class="label">Manifold Coordinate</div>
-        <div id="coord-val" class="value">Q^Q + 0</div>
-    </div>
-    <div class="audit-info" style="text-align:right;">
-        <div class="label">Parity Stability</div>
-        <div class="value">180!! [ACTIVE]</div>
-    </div>
+    <div class="info"><div class="label">Coordinate Phase</div><div id="coord" class="value">Q^Q + 0</div></div>
+    <div class="info"><div class="label">Parity</div><div class="value">180!! STABLE</div></div>
+    <div class="info"><div class="label">Observation Mode</div><div id="status" class="value">INFINITE_WITNESS</div></div>
 </div>
 
-<div id="container">
-    <div class="panel" id="panel-pi">
-        <canvas id="canvas-pi"></canvas>
-        <div class="panel-label">π (CIRCULAR)</div>
-    </div>
-    <div class="panel" id="panel-e">
-        <canvas id="canvas-e"></canvas>
-        <div class="panel-label">e (GROWTH)</div>
-    </div>
+<div id="manifold">
+    <div class="panel"><canvas id="c-pi"></canvas><div class="panel-id">π</div></div>
+    <div class="panel"><canvas id="c-e"></canvas><div class="panel-id">e</div></div>
 </div>
 
 <div id="controls">
-    <button onclick="snapAll()">CAPTURE DUAL PROOF</button>
-    <button onclick="advance()">ADVANCE (SPACE)</button>
+    <button id="snap-btn">SNAP & COPY</button>
+    <button id="adv-btn">ADVANCE (SPACE)</button>
 </div>
 
 <script>
-    const configs = [
-        { id: 'canvas-pi', pattern: [3, 1, 4, 1, 5, 9, 2] }, // Pi-series residues
-        { id: 'canvas-e', pattern: [2, 7, 1, 8, 2, 8, 1] }  // E-series residues
+    const canvasConfig = [
+        { id: 'c-pi', pattern: [3, 1, 4, 1, 5, 9, 2, 6, 5, 3] },
+        { id: 'c-e', pattern: [2, 7, 1, 8, 2, 8, 1, 8, 2, 8] }
     ];
 
     let clicks = 0n;
     let active = true;
     const ctxs = [];
+    const size = 16;
 
     function init() {
-        configs.forEach(cfg => {
-            const canvas = document.getElementById(cfg.id);
-            const ctx = canvas.getContext('2d');
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
-            ctxs.push({ ctx, cfg, drops: Array(Math.floor(canvas.width/18)).fill(0) });
+        canvasConfig.forEach(cfg => {
+            const c = document.getElementById(cfg.id);
+            const ctx = c.getContext('2d', { alpha: false });
+            c.width = c.parentElement.clientWidth;
+            c.height = c.parentElement.clientHeight;
+            ctxs.push({ ctx, cfg, drops: Array(Math.floor(c.width/size)).fill(0) });
         });
     }
 
-    function getResidue(scale, offset, pattern) {
-        return pattern[Number((scale + BigInt(offset)) % BigInt(pattern.length))];
+    function getResidue(scale, offset, p) {
+        return p[Number((scale + BigInt(offset)) % BigInt(p.length))];
     }
 
-    function render() {
+    function flow() {
         if (!active) return;
         ctxs.forEach(obj => {
             obj.ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
             obj.ctx.fillRect(0, 0, obj.ctx.canvas.width, obj.ctx.canvas.height);
             obj.ctx.fillStyle = '#0f0';
-            obj.ctx.font = "16px monospace";
+            obj.ctx.font = size + "px monospace";
 
             obj.drops.forEach((y, i) => {
                 const digit = getResidue(clicks, i + y, obj.cfg.pattern);
-                obj.ctx.fillText(digit, i * 18, y * 18);
-                if (y * 18 > obj.ctx.canvas.height && Math.random() > 0.95) obj.drops[i] = 0;
+                obj.ctx.fillText(digit, i * size, y * size);
+                if (y * size > obj.ctx.canvas.height && Math.random() > 0.98) obj.drops[i] = 0;
                 obj.drops[i]++;
             });
         });
         clicks += 1n;
-        document.getElementById('coord-val').innerText = `Q^Q + ${clicks}`;
-        requestAnimationFrame(render);
+        document.getElementById('coord').innerText = `Q^Q + ${clicks}`;
+        requestAnimationFrame(flow);
     }
 
-    function snapAll() {
+    function snap() {
         active = false;
         ctxs.forEach(obj => {
             obj.ctx.fillStyle = '#fff';
+            obj.ctx.fillRect(0, 0, obj.ctx.canvas.width, obj.ctx.canvas.height);
+            obj.ctx.fillStyle = '#000';
+            obj.ctx.font = `bold ${size}px monospace`;
+            for(let x=0; x < obj.ctx.canvas.width/size; x++) {
+                for(let y=0; y < obj.ctx.canvas.height/size; y++) {
+                    obj.ctx.fillText(getResidue(clicks, x+y, obj.cfg.pattern), x*size, y*size);
+                }
+            }
+        });
+        document.getElementById('status').innerText = "AUDIT_PAUSED";
+    }
+
+    function advance() {
+        active = true;
+        document.getElementById('status').innerText = "INFINITE_WITNESS";
+        clicks += 100n; // Deeper jump
+        flow();
+    }
+
+    document.getElementById('snap-btn').onclick = snap;
+    document.getElementById('adv-btn').onclick = advance;
+    window.onkeydown = (e) => { if(e.code === 'Space') advance(); };
+    window.onresize = init;
+
+    init();
+    flow();
+</script>
+</body>
+</html>
             obj.ctx.fillRect(0, 0, obj.ctx.canvas.width, obj.ctx.canvas.height);
             obj.ctx.fillStyle = '#000';
             for(let x=0; x<obj.ctx.canvas.width/18; x++) {
