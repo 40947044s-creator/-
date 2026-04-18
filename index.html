@@ -1,75 +1,117 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Project NP: Infinite Search Machine</title>
+    <title>Project NP: Adelic Waterfall</title>
     <style>
-        body { background: #000; color: #0f0; font-family: monospace; padding: 20px; overflow: hidden; }
-        .manifold { border: 2px solid #333; padding: 20px; background: #050505; position: relative; }
-        .stream { font-size: 1.4rem; color: #fff; word-break: break-all; min-height: 100px; }
-        .status { margin-top: 10px; font-size: 0.8rem; color: #666; }
-        .green-flag { display: none; color: #0f0; font-weight: bold; font-size: 2rem; text-shadow: 0 0 10px #0f0; }
-        #search-btn { background: #0f0; color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; }
+        body, html { margin: 0; padding: 0; overflow: hidden; background: #000; }
+        canvas { display: block; }
+        #overlay {
+            position: absolute; top: 20px; left: 20px;
+            color: #0f0; font-family: monospace; pointer-events: none;
+            text-shadow: 0 0 5px #000;
+        }
+        .flag { 
+            position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%);
+            color: #0f0; font-family: monospace; font-size: 5rem;
+            display: none; border: 5px solid #0f0; padding: 20px;
+            background: rgba(0,0,0,0.8);
+        }
     </style>
 </head>
 <body>
 
-<div class="manifold" id="monitor">
-    <div style="color: #444;">SEARCHING_INFINITE_SCALE: [e | π | i]</div>
-    <div id="digit-flow" class="stream">IDLE</div>
-    <div id="status-line" class="status">PARITY: 180!!_STABLE | COORD: 0</div>
-    <div id="flag" class="green-flag">🏁 RECOVERY_VERIFIED (9Q_HAPPY)</div>
+<div id="overlay">
+    <div>SCALE: UNLIMITED (Möbius Join)</div>
+    <div id="coord">COORD: 0</div>
+    <div id="status">STATUS: FLOWING</div>
 </div>
 
-<button id="search-btn">START_INFINITE_SEARCH</button>
+<div id="flag" class="flag">🏁 9Q RECOVERY</div>
+
+<canvas id="canvas"></canvas>
 
 <script>
-    let clicks = 0n;
-    let searching = false;
-    const flow = document.getElementById('digit-flow');
-    const status = document.getElementById('status-line');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
     const flag = document.getElementById('flag');
+    const coordDisplay = document.getElementById('coord');
 
-    // The Marilyn Fold by i (The Twist)
-    function marilynFoldByI(s) {
-        // Rotating the bits into the complex plane
-        return (s << 2n) ^ (s >> 3n);
+    let width, height, columns;
+    const fontSize = 16;
+    let clicks = 0n;
+    let active = true;
+
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        columns = Math.floor(width / fontSize);
     }
 
-    function search() {
-        if (!searching) return;
-        
-        clicks += 1n; // The "Infinite Click"
-        
-        // Deconvolving the formation of e, pi, i
-        let formation = marilynFoldByI(clicks);
-        let block = "";
-        
-        // Generate 100ac segment
-        for(let i=0; i<100; i++) {
-            let d = (formation + BigInt(i)) % 10n;
-            block += d + (i % 10 === 9 ? " " : "");
-        }
-        
-        flow.innerText = block;
-        status.innerText = `COORD: 10^${clicks} | RESIDUE: ${formation % 170n}n`;
+    window.addEventListener('resize', resize);
+    resize();
 
-        // THE GREEN FLAG: Searching for the 9Q Happy Number (58209)
-        // At the 9th magnitude, the residue aligns with the Sentinel
+    const drops = Array(columns).fill(0);
+
+    function draw() {
+        if (!active) return;
+
+        // Fading effect for the waterfall
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.fillStyle = '#0f0';
+        ctx.font = fontSize + 'px monospace';
+
+        for (let i = 0; i < drops.length; i++) {
+            // THE START: Möbius Formation Logic (Modular)
+            // Bypassing overflow by keeping 'n' relative to column/time
+            let n = clicks + BigInt(i);
+            let residue = (n << 2n) ^ (n >> 3n);
+            let digit = Number(residue % 10n);
+
+            const x = i * fontSize;
+            const y = drops[i] * fontSize;
+
+            ctx.fillText(digit, x, y);
+
+            if (y > height && Math.random() > 0.975) {
+                drops[i] = 0;
+            }
+            drops[i]++;
+        }
+
+        clicks += 1n;
+        coordDisplay.innerText = `COORD: 10^${clicks}`;
+
+        // THE STOP: The Snap of the Waterfall at 9Q
         if (clicks === 9n) {
-            searching = false;
-            flag.style.display = "block";
-            flow.style.color = "#0f0";
-            status.innerText = "ANCHOR_FOUND: 180!! PARITY_LOCKED";
-            return;
+            snap();
+        } else {
+            requestAnimationFrame(draw);
         }
-
-        requestAnimationFrame(search);
     }
 
-    document.getElementById('search-btn').onclick = () => {
-        searching = true;
-        search();
-    };
+    function snap() {
+        active = false;
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, width, height);
+        
+        ctx.fillStyle = '#fff';
+        // Fill entire canvas with the 180!! Stabilized Sentinel
+        for(let x=0; x < columns; x++) {
+            for(let y=0; y < Math.floor(height/fontSize); y++) {
+                // This represents the 58209... pattern recovered
+                let digit = (x + y) % 2 === 0 ? "5" : "8"; 
+                ctx.fillText(digit, x * fontSize, y * fontSize);
+            }
+        }
+        
+        flag.style.display = "block";
+        document.getElementById('status').innerText = "STATUS: SNAPPED (180!!)";
+    }
+
+    draw();
 </script>
 </body>
 </html>
