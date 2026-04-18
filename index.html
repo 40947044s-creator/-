@@ -2,104 +2,139 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Project NP | Adelic Forensic Audit</title>
+    <title>Project NP | Adelic Witness Terminal</title>
     <style>
-        :root { --accent: #00ff41; --bg: #000; }
+        :root { --accent: #00ff41; --bg: #000; --audit-bg: #fff; }
         body, html { margin: 0; padding: 0; background: var(--bg); color: var(--accent); font-family: 'Courier New', monospace; height: 100vh; overflow: hidden; }
         
-        #header { position: absolute; top: 0; width: 100%; padding: 15px; background: rgba(0,0,0,0.9); z-index: 1000; border-bottom: 1px solid #222; display: flex; gap: 50px; }
+        #header { position: absolute; top: 0; width: 100%; padding: 20px; background: rgba(0,0,0,0.95); z-index: 1000; border-bottom: 1px solid #222; display: flex; gap: 40px; }
         .stat { display: flex; flex-direction: column; }
-        .label { color: #555; font-size: 0.7rem; text-transform: uppercase; }
-        
+        .label { color: #555; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; }
+        .value { font-size: 0.95rem; color: var(--accent); }
+
         #stage { display: flex; width: 100vw; height: 100vh; }
-        .panel { flex: 1; position: relative; border-right: 1px solid #222; overflow-y: auto; }
+        .panel { flex: 1; position: relative; border-right: 1px solid #111; }
         
-        /* THE TEXT GRID: This makes it copiable */
-        .digit-grid { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            display: none; grid-template-columns: repeat(auto-fill, 18px); 
-            padding: 80px 20px; box-sizing: border-box; background: #fff; color: #000;
-            z-index: 500; font-weight: bold; line-height: 18px;
+        /* FORENSIC PANELS: Real Selectable Text Area */
+        .audit-panel { 
+            position: absolute; inset: 0; padding: 100px 30px; 
+            background: var(--audit-bg); color: #000; display: none; 
+            z-index: 500; overflow-y: auto; white-space: pre-wrap; 
+            word-break: break-all; font-size: 1.2rem; border: none; outline: none;
+            line-height: 1.2;
         }
 
-        canvas { display: block; width: 100%; height: 100%; }
+        canvas { display: block; width: 100%; height: 100%; filter: brightness(0.5); }
+        .bg-label { position: absolute; bottom: 80px; left: 20px; font-size: 4rem; opacity: 0.05; pointer-events: none; }
 
-        #controls { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 2000; }
-        button { background: var(--bg); border: 1px solid var(--accent); color: var(--accent); padding: 10px 25px; cursor: pointer; font-family: inherit; }
+        #controls { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 2000; display: flex; gap: 15px; }
+        button { background: #000; border: 1px solid var(--accent); color: var(--accent); padding: 10px 30px; cursor: pointer; font-family: inherit; font-weight: bold; }
         button:hover { background: var(--accent); color: #000; }
     </style>
 </head>
 <body>
 
 <div id="header">
-    <div class="stat"><span class="label">Coordinate</span><span id="coord">Q^Q + 0</span></div>
-    <div class="stat"><span class="label">Parity</span><span>180!! STABLE</span></div>
-    <div class="stat"><span class="label">Status</span><span id="status">FLOWING</span></div>
+    <div class="stat"><span class="label">Coordinate Phase</span><span id="coord" class="value">Q^Q + 0</span></div>
+    <div class="stat"><span class="label">Prop: 180 Invariant</span><span class="value">Logarithmic Reversal Active</span></div>
+    <div class="stat"><span class="label">Audit Status</span><span id="status" class="value">WITNESSING_FLOW</span></div>
 </div>
 
 <div id="stage">
     <div class="panel">
-        <canvas id="can-pi"></canvas>
-        <div id="grid-pi" class="digit-grid"></div>
+        <canvas id="c-pi"></canvas>
+        <textarea id="t-pi" class="audit-panel" readonly></textarea>
+        <div class="bg-label">π</div>
     </div>
     <div class="panel">
-        <canvas id="can-e"></canvas>
-        <div id="grid-e" class="digit-grid"></div>
+        <canvas id="c-e"></canvas>
+        <textarea id="t-e" class="audit-panel" readonly></textarea>
+        <div class="bg-label">e</div>
     </div>
 </div>
 
 <div id="controls">
-    <button onclick="snap()">SNAP & COPY DIGITS</button>
-    <button onclick="advance()">ADVANCE SCALE (SPACE)</button>
+    <button onclick="snap()">SNAP FORENSIC PROOF</button>
+    <button onclick="advance()">ADVANCE (SPACE)</button>
 </div>
 
 <script>
-    const configs = [
-        { id: 'can-pi', grid: 'grid-pi', p: [3, 1, 4, 1, 5, 9, 2, 6, 5, 3] },
-        { id: 'can-e', grid: 'grid-e', p: [2, 7, 1, 8, 2, 8, 1, 8, 2, 8] }
+    const ANCESTORS = [
+        { id: 'c-pi', tid: 't-pi', p: [3, 1, 4, 1, 5, 9, 2, 6, 5, 3] },
+        { id: 'c-e', tid: 't-e', p: [2, 7, 1, 8, 2, 8, 1, 8, 2, 8] }
     ];
 
     let clicks = 0n;
     let active = true;
     const ctxs = [];
+    const step = 20;
 
-    function init() {
+    function setup() {
         ctxs.length = 0;
-        configs.forEach(cfg => {
-            const c = document.getElementById(cfg.id);
-            const ctx = c.getContext('2d');
-            c.width = c.parentElement.clientWidth;
-            c.height = c.parentElement.clientHeight;
-            ctxs.push({ ctx, cfg, drops: Array(Math.floor(c.width/18)).fill(0) });
+        ANCESTORS.forEach(a => {
+            const canvas = document.getElementById(a.id);
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            ctxs.push({ ctx, tid: a.tid, p: a.p, drops: Array(Math.floor(canvas.width/step)).fill(0) });
         });
     }
 
-    function getRes(scale, offset, p) {
-        return p[Number((scale + BigInt(offset)) % BigInt(p.length))];
+    function fold(scale, offset, p) {
+        // The Logarithmic Reversal Logic
+        const phase = Number((scale + BigInt(offset)) % BigInt(p.length));
+        return p[phase];
     }
 
-    function draw() {
+    function render() {
         if (!active) return;
         ctxs.forEach(o => {
             o.ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
             o.ctx.fillRect(0, 0, o.ctx.canvas.width, o.ctx.canvas.height);
             o.ctx.fillStyle = '#0f0';
-            o.ctx.font = "16px monospace";
+            o.ctx.font = step + "px monospace";
             o.drops.forEach((y, i) => {
-                const d = getRes(clicks, i + y, o.cfg.p);
-                o.ctx.fillText(d, i * 18, y * 18);
-                if (y * 18 > o.ctx.canvas.height && Math.random() > 0.98) o.drops[i] = 0;
+                const digit = fold(clicks, i + y, o.p);
+                o.ctx.fillText(digit, i * step, y * step);
+                if (y * step > o.ctx.canvas.height && Math.random() > 0.98) o.drops[i] = 0;
                 o.drops[i]++;
             });
         });
         clicks += 1n;
         document.getElementById('coord').innerText = `Q^Q + ${clicks}`;
-        requestAnimationFrame(draw);
+        requestAnimationFrame(render);
     }
 
     function snap() {
         active = false;
-        configs.forEach(cfg => {
+        ANCESTORS.forEach(a => {
+            const area = document.getElementById(a.tid);
+            area.style.display = 'block';
+            let forensicData = "";
+            for(let i=0; i<4000; i++) {
+                forensicData += fold(clicks, i, a.p);
+                if((i+1) % 64 === 0) forensicData += "\n";
+            }
+            area.value = forensicData;
+        });
+        document.getElementById('status').innerText = "AUDIT_PAUSED (COPIABLE)";
+    }
+
+    function advance() {
+        active = true;
+        ANCESTORS.forEach(a => document.getElementById(a.tid).style.display = 'none');
+        document.getElementById('status').innerText = "WITNESSING_FLOW";
+        clicks += 1000n;
+        render();
+    }
+
+    window.onresize = setup;
+    window.onkeydown = (e) => { if(e.code === 'Space') active ? snap() : advance(); };
+    setup();
+    render();
+</script>
+</body>
+</html>
             const grid = document.getElementById(cfg.grid);
             grid.style.display = 'grid';
             let content = '';
