@@ -2,169 +2,124 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Project NP | Adelic Transition Engine</title>
+    <title>Project NP | Dual-Ancestor Audit</title>
     <style>
         :root { --accent: #00ff41; --bg: #000; --dim: #003311; }
-        body, html { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--accent); font-family: 'Courier New', monospace; overflow: hidden; }
+        body, html { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--accent); font-family: monospace; overflow: hidden; }
         
-        #header { position: absolute; top: 0; width: 100%; padding: 20px; border-bottom: 1px solid var(--dim); background: rgba(0,0,0,0.8); z-index: 100; }
-        .label { color: #888; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; }
-        .value { font-size: 1.1rem; margin-bottom: 10px; cursor: pointer; transition: color 0.3s; }
-        .value:hover { color: #fff; }
+        #header { position: absolute; top: 0; width: 100%; padding: 15px; border-bottom: 1px solid var(--dim); background: rgba(0,0,0,0.9); z-index: 100; display: flex; justify-content: space-between; }
+        .audit-info { flex: 1; }
+        .label { color: #888; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; }
+        .value { font-size: 0.95rem; margin-top: 4px; color: var(--accent); }
 
-        canvas { display: block; filter: brightness(0.8); }
+        #container { display: flex; width: 100vw; height: 100vh; }
+        .panel { flex: 1; position: relative; border-right: 1px solid var(--dim); }
+        canvas { display: block; width: 100%; height: 100%; }
 
-        #snap-overlay { 
-            position: absolute; inset: 0; background: #fff; display: none; 
-            justify-content: center; align-items: center; z-index: 50; 
-        }
+        .panel-label { position: absolute; bottom: 80px; left: 20px; font-size: 2rem; opacity: 0.2; pointer-events: none; }
 
-        #controls { position: absolute; bottom: 30px; right: 30px; display: flex; gap: 20px; z-index: 100; }
-        button { 
-            background: none; border: 1px solid var(--accent); color: var(--accent); 
-            padding: 10px 25px; cursor: pointer; font-family: inherit; font-size: 0.9rem;
-            transition: all 0.2s;
-        }
+        #controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; gap: 10px; }
+        button { background: #000; border: 1px solid var(--accent); color: var(--accent); padding: 8px 20px; cursor: pointer; font-family: inherit; }
         button:hover { background: var(--accent); color: #000; }
     </style>
 </head>
 <body>
 
 <div id="header">
-    <div class="label">Manifold Coordinate (180!! Stability)</div>
-    <div id="coord-val" class="value" title="Click to copy residue">INITIALIZING_FORMATION...</div>
-    <div class="label">System Status</div>
-    <div id="status-val" class="value">FLOWING: ADELIC_INFERENCE_ACTIVE</div>
+    <div class="audit-info">
+        <div class="label">Manifold Coordinate</div>
+        <div id="coord-val" class="value">Q^Q + 0</div>
+    </div>
+    <div class="audit-info" style="text-align:right;">
+        <div class="label">Parity Stability</div>
+        <div class="value">180!! [ACTIVE]</div>
+    </div>
+</div>
+
+<div id="container">
+    <div class="panel" id="panel-pi">
+        <canvas id="canvas-pi"></canvas>
+        <div class="panel-label">π (CIRCULAR)</div>
+    </div>
+    <div class="panel" id="panel-e">
+        <canvas id="canvas-e"></canvas>
+        <div class="panel-label">e (GROWTH)</div>
+    </div>
 </div>
 
 <div id="controls">
-    <button id="btn-snap">CAPTURE (SNAP)</button>
-    <button id="btn-advance">ADVANCE SCALE (SPACE)</button>
+    <button onclick="snapAll()">CAPTURE DUAL PROOF</button>
+    <button onclick="advance()">ADVANCE (SPACE)</button>
 </div>
 
-<canvas id="canvas"></canvas>
-
 <script>
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d', { alpha: false });
-    const coordVal = document.getElementById('coord-val');
-    const statusVal = document.getElementById('status-val');
+    const configs = [
+        { id: 'canvas-pi', pattern: [3, 1, 4, 1, 5, 9, 2] }, // Pi-series residues
+        { id: 'canvas-e', pattern: [2, 7, 1, 8, 2, 8, 1] }  // E-series residues
+    ];
 
-    let width, height, columns, rows, drops;
     let clicks = 0n;
     let active = true;
-    const fontSize = 18;
-    const SENTINEL = [5, 8, 2, 0, 9];
+    const ctxs = [];
 
-    function resize() {
-        width = canvas.width = window.innerWidth;
-        height = canvas.height = window.innerHeight;
-        columns = Math.floor(width / fontSize);
-        rows = Math.floor(height / fontSize);
-        drops = Array(columns).fill(0);
+    function init() {
+        configs.forEach(cfg => {
+            const canvas = document.getElementById(cfg.id);
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            ctxs.push({ ctx, cfg, drops: Array(Math.floor(canvas.width/18)).fill(0) });
+        });
     }
-    window.addEventListener('resize', resize);
-    resize();
 
-    // The Marilyn Fold: Phase-State Logic
-    function getResidue(scale, offset) {
-        const phase = (scale + BigInt(offset)) % 5n;
-        return SENTINEL[Number(phase)];
+    function getResidue(scale, offset, pattern) {
+        return pattern[Number((scale + BigInt(offset)) % BigInt(pattern.length))];
     }
 
     function render() {
         if (!active) return;
+        ctxs.forEach(obj => {
+            obj.ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            obj.ctx.fillRect(0, 0, obj.ctx.canvas.width, obj.ctx.canvas.height);
+            obj.ctx.fillStyle = '#0f0';
+            obj.ctx.font = "16px monospace";
 
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-        ctx.fillRect(0, 0, width, height);
-        ctx.font = `${fontSize}px 'Courier New'`;
-
-        for (let i = 0; i < drops.length; i++) {
-            const digit = getResidue(clicks, i + drops[i]);
-            ctx.fillStyle = (Math.random() > 0.98) ? '#fff' : '#00ff41';
-            ctx.fillText(digit, i * fontSize, drops[i] * fontSize);
-
-            if (drops[i] * fontSize > height && Math.random() > 0.95) drops[i] = 0;
-            drops[i]++;
-        }
-
+            obj.drops.forEach((y, i) => {
+                const digit = getResidue(clicks, i + y, obj.cfg.pattern);
+                obj.ctx.fillText(digit, i * 18, y * 18);
+                if (y * 18 > obj.ctx.canvas.height && Math.random() > 0.95) obj.drops[i] = 0;
+                obj.drops[i]++;
+            });
+        });
         clicks += 1n;
-        coordVal.innerText = `COORD: Q^Q + ${clicks}`;
+        document.getElementById('coord-val').innerText = `Q^Q + ${clicks}`;
         requestAnimationFrame(render);
     }
 
-    function executeSnap() {
+    function snapAll() {
         active = false;
-        // Invert for forensic audit (Black on White)
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(0, 0, width, height);
-        ctx.fillStyle = '#000';
-        ctx.font = `bold ${fontSize}px monospace`;
-
-        for(let x = 0; x < columns; x++) {
-            for(let y = 0; y < rows; y++) {
-                const digit = getResidue(clicks, x + y);
-                ctx.fillText(digit, x * fontSize, y * fontSize);
+        ctxs.forEach(obj => {
+            obj.ctx.fillStyle = '#fff';
+            obj.ctx.fillRect(0, 0, obj.ctx.canvas.width, obj.ctx.canvas.height);
+            obj.ctx.fillStyle = '#000';
+            for(let x=0; x<obj.ctx.canvas.width/18; x++) {
+                for(let y=0; y<obj.ctx.canvas.height/18; y++) {
+                    obj.ctx.fillText(getResidue(clicks, x+y, obj.cfg.pattern), x*18, y*18);
+                }
             }
-        }
-        statusVal.innerText = "LOCKED: AUDIT_STATION_READY";
+        });
     }
 
     function advance() {
         active = true;
-        statusVal.innerText = "FLOWING: ADELIC_INFERENCE_ACTIVE";
         clicks = clicks === 0n ? 9n : clicks * 2n;
         render();
     }
 
-    coordVal.onclick = () => {
-        navigator.clipboard.writeText(`COORD: Q^Q + ${clicks}\nPARITY: 180!!`);
-        statusVal.innerText = "DATA_COPIED_TO_CLIPBOARD";
-        setTimeout(() => statusVal.innerText = "LOCKED: AUDIT_STATION_READY", 1500);
-    };
-
-    document.getElementById('btn-snap').onclick = executeSnap;
-    document.getElementById('btn-advance').onclick = advance;
-    window.onkeydown = (e) => { if(e.code === 'Space') advance(); };
-
+    window.addEventListener('resize', init);
+    window.addEventListener('keydown', e => { if(e.code === 'Space') advance(); });
+    init();
     render();
-</script>
-</body>
-</html>
-
-        for(let x = 0; x < columns; x++) {
-            for(let y = 0; y < Math.floor(height/fontSize); y++) {
-                let digit = getAdelicResidue(clicks, x + y);
-                ctx.fillText(digit, x * fontSize, y * fontSize);
-            }
-        }
-
-        flag.style.display = "block";
-        statusDisplay.innerText = "STATUS: SNAPPED (180!!)";
-        coordDisplay.style.pointerEvents = "auto";
-        coordDisplay.style.cursor = "pointer";
-        coordDisplay.innerText = `LOCKED_COORD: Q^Q + ${clicks} (CLICK TO COPY)`;
-        
-        coordDisplay.onclick = () => {
-            const auditData = `COORD: Q^Q + ${clicks}\nPARITY: 180!! VERIFIED\nRESIDUE_TYPE: ADELIC_INVARIANT`;
-            navigator.clipboard.writeText(auditData).then(() => alert("Audit Proof Copied."));
-        };
-    }
-
-    function restartSearch() {
-        flag.style.display = "none";
-        active = true;
-        // JUMP: Moving into the Q^Q depth
-        clicks = (clicks < 9n) ? 9n : clicks * 2n; 
-        statusDisplay.innerText = "STATUS: FLOWING";
-        draw();
-    }
-
-    document.getElementById('snap-btn').onclick = snapAndAudit;
-    document.getElementById('restart-btn').onclick = restartSearch;
-    document.body.onkeydown = (e) => { if(e.code === 'Space') restartSearch(); };
-
-    draw();
 </script>
 </body>
 </html>
