@@ -1,0 +1,72 @@
+<!DOCTYPE html><html>
+<head>
+  <meta charset="UTF-8">
+  <title>Exact Digit Extractor (e and π)</title>
+  <style>
+    body { font-family: monospace; padding: 20px; }
+    input, button { font-size: 16px; margin: 5px; }
+    #output { margin-top: 20px; white-space: pre-wrap; }
+  </style>
+</head>
+<body><h2>Digit Extractor for e and π (Integer Only)</h2><label>Enter n (number of digits): </label>
+<input id="n" type="number" value="20">
+<button onclick="compute()">Compute</button>
+
+<div id="output"></div><script>
+
+// -------- e DIGITS (BigInt exact) --------
+function computeE(n) {
+    let scale = 10n ** BigInt(n + 5); // extra precision
+    let sum = 0n;
+
+    let fact = 1n;
+    for (let i = 0; i < n + 10; i++) {
+        if (i > 0) fact *= BigInt(i);
+        sum += scale / fact;
+    }
+
+    let str = sum.toString();
+    return str[0] + "." + str.slice(1, n + 1);
+}
+
+// -------- π DIGITS (spigot, integer only) --------
+function computePi(n) {
+    let len = Math.floor(10 * n / 3);
+    let A = new Array(len).fill(2);
+    let result = "";
+
+    for (let j = 0; j < n; j++) {
+        let carry = 0;
+
+        for (let i = len - 1; i >= 0; i--) {
+            let x = A[i] * 10 + carry;
+            A[i] = x % (2 * i + 1);
+            carry = Math.floor(x / (2 * i + 1)) * i;
+        }
+
+        let digit = Math.floor(carry / 10);
+        result += digit;
+    }
+
+    return result[0] + "." + result.slice(1);
+}
+
+// -------- MAIN --------
+function compute() {
+    let n = parseInt(document.getElementById("n").value);
+    let out = document.getElementById("output");
+
+    out.textContent = "Computing...\n";
+
+    setTimeout(() => {
+        let eVal = computeE(n);
+        let piVal = computePi(n);
+
+        out.textContent =
+            "e ≈ " + eVal + "\n\n" +
+            "π ≈ " + piVal;
+    }, 50);
+}
+
+</script></body>
+</html>
